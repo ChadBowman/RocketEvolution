@@ -40,7 +40,7 @@ public class Calculus {
             Variable v = function.expression.get(i);
 
             // if the power is 1, replace with just coefficient
-            if(Variable.isEqual(v.getPower(), (double) 1))
+            if(Variable.isEqual(v.getPower(), 1.0, Variable.TOLERANCE))
                 list.add(new Variable(v.getCoefficient()));
 
             // else perform the power-rule (when not a constant)

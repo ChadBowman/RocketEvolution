@@ -3,12 +3,16 @@ package net.orthus.rocketevolution.math;
 /**
  * Created by Chad on 7/23/2015.
  *
- * Uses a pair of longs as the components of a 2D vector.
+ * Uses a pair of doubles as the components of a 2D vector.
  */
 public class Vector {
 
+    //=== CONSTANTS
+    // Tolerance for double comparison
+    final double DELTA = 0.0000001;
+
     //=== INSTANCE VARIABLES
-    private long x, y;
+    private double x, y;
 
     //=== CONSTRUCTORS
 
@@ -22,7 +26,7 @@ public class Vector {
      * @param x X component of vector.
      * @param y Y component of vector.
      */
-    public Vector(long x, long y){
+    public Vector(double x, double y){
         this.x = x;
         this.y = y;
     }
@@ -34,7 +38,7 @@ public class Vector {
      * @param x2 x value of the second ordered pair.
      * @param y2 y value of the second ordered pair.
      */
-    public Vector(long x1, long y1, long x2, long y2){
+    public Vector(double x1, double y1, double x2, double y2){
         this.x = x2 - x1;
         this.y = y2 - y1;
     }
@@ -44,7 +48,7 @@ public class Vector {
      * @param magnitude Length of vector.
      * @param theta Angle from right side of X-axis.
      */
-    public Vector(long magnitude, float theta){
+    public Vector(double magnitude, float theta){
         setPolar(magnitude, theta);
     }
 
@@ -57,7 +61,7 @@ public class Vector {
      * @param magnitude Length of vector.
      * @param theta Angle from the right side of the X-axis.
      */
-    public void setPolar(long magnitude, float theta){
+    public void setPolar(double magnitude, float theta){
 
         // if magnitude is negative, convert
         if(magnitude < 0){
@@ -75,8 +79,8 @@ public class Vector {
         theta %= 2 * Math.PI;
 
         // set components
-        this.x = (long) (magnitude * Math.cos(theta));
-        this.y = (long) (magnitude * Math.sin(theta));
+        x = magnitude * Math.cos(theta);
+        y = magnitude * Math.sin(theta);
 
     } // end setPolar
 
@@ -86,43 +90,44 @@ public class Vector {
      * @return Vector of components summed
      */
     public Vector add(Vector vector){
-        return new Vector(this.x + vector.getX(), this.y + vector.getY());
+        return new Vector(x + vector.getX(), y + vector.getY());
     }
 
     public Vector subtract(Vector vector){
-        return new Vector(this.x - vector.getX(), this.y - vector.getY());
+        return new Vector(x - vector.getX(), y - vector.getY());
     }
 
     public Vector multiply(double scalar){
-        return new Vector((long)(x * scalar), (long)(y * scalar));
+        return new Vector(x * scalar, y * scalar);
     }
 
     /**
      * @param vector Vector to cross this against
      * @return the magnitude of the cross product
      */
-    public long cross(Vector vector){
+    public double cross(Vector vector){
         return (x * vector.getY()) - (y * vector.getX());
     }
 
-    public Vector newMagnitude(long magnitude){
+    public Vector newMagnitude(double magnitude){
         return new Vector(magnitude, getAngle());
     }
 
-    public void newMagnitude_(long magnitude){
+    public void newMagnitude_(double magnitude){
         setPolar(magnitude, getAngle());
     }
 
     public Vector newAngle(float theta){
-        return new Vector((long) (getMagnitude() + .5), theta);
+        return new Vector(getMagnitude() + .5, theta);
     }
 
     public void newAngle_(float theta){
-        setPolar((long) (getMagnitude() + 0.5), theta);
+        setPolar(getMagnitude() + 0.5, theta);
     }
 
+
     public Vector addAngle(float theta){
-        return new Vector((long) getMagnitude(), getAngle() + theta);
+        return new Vector(getMagnitude(), getAngle() + theta);
     }
 
     /**
@@ -154,22 +159,26 @@ public class Vector {
      * @param v second vector which makes up triangle.
      * @return area of triangle
      */
-    public long area(Vector v){
+    public double area(Vector v){
         // half the determinate
-        long d = (x * v.getY()) - (y * v.getX());
+        double d = (x * v.getY()) - (y * v.getX());
         return Math.abs(d) / 2;
     }
 
     /**
+     * Compares the components of both Vectors.
      * @param v Vector to compare against
-     * @return true if both components are the same, else false
+     * @return true if both components are within the tolerance determined via DELTA.
      */
     public boolean isEqual(Vector v){
-        return (x == v.getX()) && (y == v.getY());
+        return Variable.isEqual(x, v.getX(), DELTA) && Variable.isEqual(y, v.getY(), DELTA);
     }
 
+    /**
+     * @return true if both components were smaller than the tolerance, else false.
+     */
     public boolean isZero(){
-        return (x == 0) && (y == 0);
+        return Variable.isEqual(x, 0, DELTA) && Variable.isEqual(y, 0, DELTA);
     }
 
     /**
@@ -177,7 +186,7 @@ public class Vector {
      * @return true if both vectors have the same length, else false
      */
     public boolean sameMagnitude(Vector v){
-        return Variable.isEqual(this.getMagnitude(), v.getMagnitude());
+        return Variable.isEqual(this.getMagnitude(), v.getMagnitude(), DELTA);
     }
 
     /**
@@ -185,14 +194,14 @@ public class Vector {
      * @return string in human-readable vector format.
      */
     public String toString(){
-        return String.format("<%d, %d>", x, y);
+        return String.format("<%f, %f>", x, y);
     }
 
     //=== ACCESSORS
 
-    public long getX(){ return x; }
-    public long getY(){ return y; }
-    public void setX(long x){ this.x = x; }
-    public void setY(long y){ this.y = y; }
+    public double getX(){ return x; }
+    public double getY(){ return y; }
+    public void setX(double x){ this.x = x; }
+    public void setY(double y){ this.y = y; }
 
 } // end Vector

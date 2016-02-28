@@ -1,8 +1,6 @@
 package net.orthus.rocketevolution.math;
 
-import android.util.Pair;
-
-import net.orthus.rocketevolution.Utility;
+import net.orthus.rocketevolution.utility.Utility;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,7 +13,7 @@ import java.util.Collections;
 public class VarSum {
 
     private static final int N = 1000;
-    private static final double TOLLERANCE = 0.0001;
+    private static final double TOLERANCE = 0.0001;
 
     //=== INSTANCE VARIABLE
 
@@ -75,7 +73,7 @@ public class VarSum {
         this.expression = new ArrayList<Variable>();
 
         // solve for line
-        double m = (Variable.isEqual(x2 - x1, 0.0))?
+        double m = (Variable.isEqual(x2 - x1, 0.0, TOLERANCE))?
                 Double.POSITIVE_INFINITY : (y2 - y1) / (x2 - x1);
         double b = y1 - (m * x1);
 
@@ -228,7 +226,7 @@ public class VarSum {
         double previousOutput = evaluate(bottom);
 
         // check if initial value is a solution
-        if(Math.abs(previousOutput) < TOLLERANCE)
+        if(Math.abs(previousOutput) < TOLERANCE)
             solutions.add(bottom);
 
         // placeholders
@@ -243,12 +241,12 @@ public class VarSum {
             output = evaluate(input);
 
             // if a solution is found, add it
-            if(Math.abs(output) < TOLLERANCE)
+            if(Math.abs(output) < TOLERANCE)
                 solutions.add(input);
 
             // else if the interval contains a root
             else if(!Utility.sameSign(previousOutput, output)
-                    && Math.abs(previousOutput) > TOLLERANCE) {
+                    && Math.abs(previousOutput) > TOLERANCE) {
 
                 // converge upon the root
                 solution = converge(previousInput, input);
@@ -297,7 +295,7 @@ public class VarSum {
             output = evaluate(input);
 
             // if a solution is found, return it
-            if(Math.abs(output) < TOLLERANCE)
+            if(Math.abs(output) < TOLERANCE)
                 return input;
 
             // if the interval contains a root, converge further

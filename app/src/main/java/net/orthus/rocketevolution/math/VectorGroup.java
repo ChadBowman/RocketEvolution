@@ -1,9 +1,6 @@
 package net.orthus.rocketevolution.math;
 
-import net.orthus.rocketevolution.Utility;
-
 import java.util.ArrayList;
-import java.util.UnknownFormatConversionException;
 
 /**
  * Created by Chad on 7/28/2015.
@@ -163,7 +160,9 @@ public class VectorGroup {
      */
     public ArrayList<Vector> getVectorList(){ return vectors; }
 
-    public Vector[] getVectorArray(){ return vectors.toArray(new Vector[vectors.size()]); }
+    public Vector[] getVectorArray(){
+        return vectors.toArray(new Vector[vectors.size()]);
+    }
 
     /**
      * @return the number of Vectors in the VectorGroup

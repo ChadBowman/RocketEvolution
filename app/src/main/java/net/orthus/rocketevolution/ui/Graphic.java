@@ -11,6 +11,7 @@ public abstract class Graphic {
     protected Bounds bounds;
     protected Paint paint;
     protected float scale;
+    protected float rotation;
 
     public abstract void update();
     public abstract void draw(Canvas canvas);
@@ -23,5 +24,9 @@ public abstract class Graphic {
     public void setPaint(Paint paint) { this.paint = paint;}
     public void setBounds(Bounds bounds) {
         this.bounds = bounds;
+    }
+    public void setScale(float scale){ this.scale = scale; }
+    public void setRotation(float rotation){
+        this.rotation = rotation % (float)(Math.PI * 2);
     }
 }

@@ -1,16 +1,24 @@
 package net.orthus.rocketevolution.ui;
 
 import android.content.Context;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import net.orthus.rocketevolution.GameThread;
+import net.orthus.rocketevolution.R;
+import net.orthus.rocketevolution.fuels.Fuel;
+import net.orthus.rocketevolution.fuels.KerosenePeroxide;
 import net.orthus.rocketevolution.rocket.Engine;
 import net.orthus.rocketevolution.rocket.Rocket;
+import net.orthus.rocketevolution.utility.Utility;
+
+import java.util.ArrayList;
 
 /**
  * Created by Chad on 7/23/2015.
@@ -23,7 +31,7 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
 
     private GameThread thread;
 
-    private long startTime;
+    private long startTime, previous;
     private Background bg;
     private Rocket rocket;
     private Engine engine;
@@ -42,8 +50,10 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceCreated(SurfaceHolder holder){
 
-        bg = new Background();
-        launchTime = 5;
+        bg = new Background(BitmapFactory.decodeResource(getResources(), R.drawable.bgtest));
+        launchTime = 1;
+        previous = 0;
+
 
         rocket = new Rocket();
 
@@ -80,25 +90,19 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
 
     public void update(){
 
-        long elapsed = (System.nanoTime() - startTime) / MILLION;
+        long now = System.nanoTime();
 
-        if(elapsed > 5000){
-
-            rocket = new Rocket();
-
-            launchTime = 0;
-            startTime = System.nanoTime();
-
-        }else if(elapsed > 4000){
-            launchTime = 1;
-        }else if(elapsed > 3000){
-            launchTime = 2;
-        }else if(elapsed > 2000){
-            launchTime = 3;
-        }else if(elapsed > 1000){
-            launchTime = 4;
+        if((now - startTime)/launchTime > 1e8) {
+            launchTime++;
+            //rocket.update(now - previous);
+            //bg.addH((int) rocket.gal());
+            //bg.addH(2);
         }
 
+
+        previous = now;
+
+        bg.update();
     }
 
     public void draw(Canvas canvas){
@@ -121,19 +125,19 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
 
             Bounds rocketBound = new Bounds(fithx, WIDTH - fithx, fithy, HEIGHT - fithy);
 
-            rocket.setBounds(rocketBound);
-            rocket.setPaint(paint);
-            rocket.draw(canvas);
+            rocket.getBody().setBounds(rocketBound);
+            rocket.getBody().setPaint(paint);
+            rocket.getBody().draw(canvas);
 
             paint.setStyle(Paint.Style.FILL);
 
             paint.setColor(Color.BLUE);
-            canvas.drawCircle(WIDTH / 2, rocket.getBody().getTrueCenter(), 10, paint);
+            //canvas.drawCircle(WIDTH / 2, rocket.getBody().getTrueCenter(), 10, paint);
 
             paint.setColor(Color.RED);
-            canvas.drawCircle(WIDTH / 2, rocket.getBody().getRelativeCenter(), 10, paint);
+            //canvas.drawCircle(WIDTH / 2, rocket.getBody().getRelativeCenter(), 10, paint);
 
-            drawStats(canvas);
+            //drawStats(canvas);
 
             canvas.restoreToCount(savedState);
 
@@ -147,23 +151,58 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
         paint.setColor(Color.WHITE);
         paint.setTextSize(120);
         paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        canvas.drawText(String.format("T-00:00:0%d", launchTime),
-                WIDTH / 4, HEIGHT - (HEIGHT / 10), paint);
+        //canvas.drawText(String.format("T+%d", launchTime),
+          //      WIDTH / 3, HEIGHT - (HEIGHT / 10), paint);
 
         int line = HEIGHT / 15;
         int dy = line / 3;
 
         paint.setTextSize(50);
-        String fmt = "%-10s %d m%s";
-        canvas.drawText(String.format(fmt, "Width:", rocket.width(), ""),
-                WIDTH / 15, line, paint);
-        canvas.drawText(String.format(fmt, "Height:", rocket.height(), ""),
-                WIDTH / 15, line + dy, paint);
-        canvas.drawText(String.format(fmt, "Area:", rocket.surfaceArea(), "\u00b2"),
-                WIDTH / 15, line + dy * 2, paint);
-        canvas.drawText(String.format(fmt, "Volume:", rocket.volume(), "\u00B3"),
-                WIDTH / 15, line + dy * 3, paint);
-        rocket.displayMass().draw(canvas);
+
+        String fmt = "%-10s %.2f m%s";
+        //canvas.drawText(String.format(fmt, "Width:", rocket.width(), ""),
+         //       WIDTH / 15, line, paint);
+        //canvas.drawText(String.format(fmt, "Height:", rocket.height(), ""),
+         //       WIDTH / 15, line + dy, paint);
+
+        fmt = "%-10s %d m%s";
+        //canvas.drawText(String.format(fmt, "Area:", rocket.surfaceArea(), "\u00b2"),
+           //     WIDTH / 15, line + dy * 2, paint);
+        //canvas.drawText(String.format(fmt, "Volume:", rocket.volume(), "\u00B3"),
+           //     WIDTH / 15, line + dy * 3, paint);
+
+        fmt = "%-10s %d kg";
+        //canvas.drawText(String.format(fmt, "Mass:", rocket.mass()),
+           //     WIDTH / 15, line + dy * 4, paint);
+
+        //canvas.drawText(rocket.speed(),
+             //   WIDTH / 15, line + dy * 5, paint);
+
+        //canvas.drawText(rocket.getBody().fuelGauge(),
+              //  WIDTH / 15, line + dy * 6, paint);
+
+        //canvas.drawText(rocket.acc(),
+          //      WIDTH / 15, line + dy * 7, paint);
+
+        //canvas.drawText(rocket.anAcc(),
+           //     WIDTH / 15, line + dy * 8, paint);
+
+        //canvas.drawText(rocket.alt(),
+           //     WIDTH / 15, line + dy * 10, paint);
+
+    }
+
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event){
+
+        if(event.getAction() == MotionEvent.ACTION_DOWN){
+            rocket = new Rocket();
+            //bg.reset();
+            launchTime = 1;
+        }
+
+        return super.onTouchEvent(event);
     }
 
     @Override

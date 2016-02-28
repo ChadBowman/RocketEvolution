@@ -13,6 +13,7 @@ public class Variable {
     // used in the variable location to notify the Variable is actually a constant number.
     public static final char NUMBER = '@';
     public static final char X = 'x';
+    public static double TOLERANCE = 0.0000001;
 
     //=== PRIVATE VARIABLES
     private char variable;
@@ -65,7 +66,7 @@ public class Variable {
     }
 
     /**
-     * A radicand is a number to a fractional exponent, like a square root
+     * A radicand is a number to a fractional exponent, like a square root.
      * @return true if Variable has an exponent > 0 and < 1, else false
      */
     public boolean isRadicand(){
@@ -79,7 +80,7 @@ public class Variable {
      * @return true if v has same variable char and power, else false
      */
     public boolean isAddable(Variable v){
-        if(variable == v.getVariable() && isEqual(power, v.getPower()))
+        if(variable == v.getVariable() && isEqual(power, v.getPower(), 0.0000001))
             return true;
         else
             return false;
@@ -171,10 +172,11 @@ public class Variable {
      * Works like Double.compare
      * @param d1 a number
      * @param d2 another number
+     * @param tolerance
      * @return true if the difference between them is is < 0.00001
      */
-    public static boolean isEqual(Double d1, Double d2){
-        return Math.abs(d1 - d2) < 0.00001;
+    public static boolean isEqual(double d1, double d2, double tolerance){
+        return Math.abs(d1 - d2) < tolerance;
     }
 
 } // end Variable
