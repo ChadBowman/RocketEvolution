@@ -4,6 +4,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.util.Pair;
 
 import net.orthus.rocketevolution.ui.Bounds;
 import net.orthus.rocketevolution.ui.Graphic;
@@ -14,7 +15,9 @@ import net.orthus.rocketevolution.math.VectorGroup;
 import net.orthus.rocketevolution.ui.Launchpad;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by Chad on 7/23/2015.
@@ -55,7 +58,7 @@ public class Fuselage extends Graphic {
 
     private int relativeCenter, trueCenter;
 
-    private HashMap<Integer, Engine> engines;
+    private Hash<Integer, Engine> engines;
     private Vector[] rotatedLocations;
 
     private Fuel fuel;
@@ -86,12 +89,6 @@ public class Fuselage extends Graphic {
 
         shape = new VectorGroup(mirrorVectors(vectorList));
 
-        Utility.p("%s %s %s %s",
-                vectorList.get(0).toString(),
-                vectorList.get(1).toString(),
-                vectorList.get(2).toString(),
-                "" + magnitudes.size());
-
         // get the array list
         ArrayList<Vector> vectors = shape.getVectorList();
         // grab the first half, plus vertical vectors
@@ -106,7 +103,7 @@ public class Fuselage extends Graphic {
         surfaceArea = (long) -horizontalHalf.surfaceArea();
 
         centeredAtCOM = shape.reCenter(new Vector(0, centroid));
-        engines = spawnEngines(centeredAtCOM, fuel);
+        engines = spawnEngines(centeredAtCOM);
 
         double inert = chromosome.getInertProportion(),
                 fuel = chromosome.getFuelProportion();
@@ -118,18 +115,15 @@ public class Fuselage extends Graphic {
 
     //=== PRIVATE METHODS
 
-    private HashMap<Integer, Engine> spawnEngines(VectorGroup fromCOM, Fuel fuel){
+    private Hash<Integer, Engine> spawnEngines(VectorGroup fromCOM){
 
-        HashMap<Integer, Engine> hash = new HashMap<Integer, Engine>();
+        Hash<Integer, Engine> engines = new Hash<>();
         Vector[] vs = fromCOM.getVectorArray();
 
-        // randomly generate a new Engine
-        Engine engine = new Engine(chromosome, new Vector());
-
+        Engine engine;
         double x;
         boolean flag = true;
 
-        boolean tFlag = true;
         // place Engine on the end of each Vector which doesn't have part of the rocket below it
         for(int i=0; i <= vs.length / 2; i++) {
             x = vs[i].getX();
@@ -139,38 +133,40 @@ public class Fuselage extends Graphic {
                 if(vs[j].getX() < x)
                     flag = false;
 
-
             if(flag) {
                 // set reference vector to Engine template, place on Rocket
-                engine.setFromCOM(vs[i]);
-                hash.put(i, engine);
+                engine = new Engine(chromosome, vs[i]);
+                engines.add(i, engine);
 
                 // if not the top or bottom Vector, add Engine to other side
                 if((i != 0) && (i != vs.length/2)) {
 
-                    // make a new instance of engine from the previous
-                    engine = engine.clone();
-
-                    if(tFlag) {
-                        engine.setThrottle(1f);  //TODO temp
-                        flag = false;
-                    }
-                    // set the reference Vector
-                    engine.setFromCOM(vs[vs.length - 1]);
-
-                    //engine.setThrottle(new Random().nextFloat());
-                    // place it on the Rocket
-                    hash.put(vs.length - i, engine);
+                    // make a new instance of engine
+                    engine = new Engine(chromosome, vs[vs.length - i]);
+                    engines.add(vs.length - i, engine);
                 }
             }
 
-            flag = true;
-        }
+            flag = true; // reset flag
 
-        return hash;
+        } // end for
+
+
+        return engines;
 
     } // end spawnEngines
 
+    private Engine[] enginesInOrder(){
+
+        Engine[] es = new Engine[engines.entries()];
+        List<Integer> keys = engines.keys();
+        Collections.sort(keys);
+
+        for(int i=0; i< keys.size(); i++)
+            es[i] = engines.get(keys.get(i));
+
+        return es;
+    }
 
     /**
      * Calculates the mass of the Rocket with empty fuel tanks.
@@ -208,12 +204,12 @@ public class Fuselage extends Graphic {
      * TODO calculate exact rotational inertia using calculus.
      * @return rotational inertia divided by rocket mass.
      */
-    private double calculateInertia(){
+    private double currentInertia(){
 
         // radius of cylinder squared
-        long r = (long) ((volume / (Math.PI * height)) + 0.5);
-        // rotational inertia of cylinder about central diameter (orthogonal to circle).
-        long i = (long) ((0.25 * r) + ((1/12.0) * Math.pow(height, 2)) + 0.5);
+        double r = volume / (Math.PI * height);
+        // rotational inertia of cylinder about central diameter (orthogonal to base).
+        double i = (0.25 * r) + ((1/12.0) * Math.pow(height, 2));
 
         return i * currentMass();
     }
@@ -228,7 +224,7 @@ public class Fuselage extends Graphic {
         // decrement through vectors, skipping the vertical ones. Start with last one
         // to continue the logical flow around the circle.
         // Vectors are copied to array first so ArrayList size doesn't change
-        ArrayList<Vector> holder = new ArrayList<Vector>();
+        ArrayList<Vector> holder = new ArrayList<>();
         for (int i = vectors.size() - 2; i > 0; i--)
             holder.add(new Vector(vectors.get(i).getX() * -1, vectors.get(i).getY()));
 
@@ -273,51 +269,79 @@ public class Fuselage extends Graphic {
         return (smallest * -1) + largest;
     }
 
-    //=== PUBLIC METHODS
+    private void burnFuel(double dt, double[] throttle){
 
-    public double netTorque(double pa){
+        Engine[] engines = enginesInOrder();
+
+        for(int i=0; i < engines.length; i++)
+            currentFuelMass -= engines[i].getMassFlowRate() * throttle[i] * dt;
+
+        if(currentFuelMass < 0)
+            currentFuelMass = 0;
+    }
+
+    private double netTorque(double pa, double[] throttle, double[] gimbal){
+
+        Engine[] engines = enginesInOrder();
         double total = 0;
 
-        for(Engine engine : engines.values())
-            total += engine.torque(pa);
-        Utility.p("NetT: %f", total);
+        for(int i=0; i < engines.length; i++)
+            total += engines[i].torque(pa, throttle[i], gimbal[i]);
+
         return total;
     }
 
-    public double thrust(double pa){
-        double total = 0;
+    private Vector netThrust(double pa, double[] throttle, double[] gimbal){
 
-        for(Engine engine : engines.values())
-            total += engine.thrust(pa);
+        Engine[] engines = enginesInOrder();
+        Vector total = new Vector();
+
+        for(int i=0; i < engines.length; i++)
+            total.add_(engines[i].thrust(pa, throttle[i], gimbal[i]));
 
         return total;
     }
 
-    //TODO return a vector
-    public Vector acceleration(double pa){
-        double mag = thrust(pa) / currentMass();
-        float ang = rotation + (float)(Math.PI / 2);
-        return new Vector(mag, ang);
-    }
-
-    public double angularAcceleration(double pa){
-        double a = netTorque(pa) / calculateInertia();
-
-        return a;
+    private double currentFuelProportion(){
+        return currentFuelMass / initialFuelMass;
     }
 
     //=== PUBLIC METHODS
 
-    public void burnFuel(double dt){
+    /**
+     *
+     * @param pa ambient atmospheric pressure (Pa)
+     * @param dt small slice of time (s)
+     * @param throttle values from 0 to 1 for each engine
+     * @param gimbal values from -Pi/2 to Pi/2 for each engine
+     * @return Vector: net acceleration on system, Double: net torque on system, Double: Fuel proportion.
+     */
+    public Triple<Vector, Double, Double>
+        step(double pa, double dt, double[] throttle, double[] gimbal){
 
-        for(Engine engine: engines.values())
-            currentFuelMass -= engine.currentMassFlowRate() * dt;
+        Vector acc;     // instantaneous acceleration on rocket due to thrust
+        double angAcc;  // instantaneous angular acceleration
 
+        if(currentFuelMass > 0) {
+
+            acc = netThrust(pa, throttle, gimbal).multiply(1 / currentMass());
+            angAcc = netTorque(pa, throttle, gimbal) / currentInertia();
+
+            // burn fuel at current rate
+            burnFuel(dt, throttle);
+
+        }else{
+            acc = new Vector();
+            angAcc = 0;
+        }
+
+        return new Triple<>(acc, angAcc, currentFuelProportion());
     }
 
-    public String fuelGauge(){
-        return String.format("Fuel: %.0f%%", 100 * currentFuelMass / initialFuelMass);
-    }
+    //=== PUBLIC METHODS
+
+    public double mass(){ return currentMass(); }
+
 
     public Path path(float theta){
 
@@ -341,7 +365,7 @@ public class Fuselage extends Graphic {
 
         //TODO temp variables for testing
         relativeCenter = (int) (xAxis - (scale * centroid));
-        trueCenter = (int) xAxis;
+        trueCenter = xAxis;
 
         //Array to save locations
         rotatedLocations = new Vector[vectors.size()];
@@ -378,8 +402,10 @@ public class Fuselage extends Graphic {
     public void draw(Canvas canvas) {
 
         canvas.drawPath(path(rotation), paint);
+
         int x, y, rad, height;
-        for(Integer key : engines.keySet()) {
+        for(Integer key : engines.keys()){
+
            Engine e = engines.get(key);
             x = (int) rotatedLocations[key].getX();
             y = (int) rotatedLocations[key].getY();
@@ -414,9 +440,9 @@ public class Fuselage extends Graphic {
         Paint paint1 = new Paint();
         paint1.setColor(Color.BLACK);
         paint1.setStyle(Paint.Style.FILL);
-        for(Engine e : engines.values()) {
+        for(Engine e : engines.values())
             e.setPaint(paint1);
-        }
+
     }
 
     //===== STATIC METHODS
@@ -429,7 +455,7 @@ public class Fuselage extends Graphic {
      */
     public static Tuple<Integer> randomizedFuselageParameters() {
 
-        Tuple<Integer> list = new Tuple<Integer>();
+        Tuple<Integer> list = new Tuple<>();
 
         // number of vectors to randomize
         // minimum of 3 to avoid 2D/1D designs
@@ -443,10 +469,9 @@ public class Fuselage extends Graphic {
     }
 
     //=== ACCESSORS
-
+    public int engineCount(){ return engines.entries(); }
     public double getVolume(){ return volume; }
     public double getSurfaceArea() { return surfaceArea; }
-    public double getMass(){ return currentMass(); }
     public double getFuelMass(){ return currentFuelMass; }
     public double getWidth(){ return width; }
     public double getHeight(){ return height; }

@@ -13,10 +13,10 @@ import java.util.UUID;
 public abstract class Fuel{
 
     //=== CONSTANTS
-    protected static final int KEROSENE_PEROXIDE = 0;
+    public static final int KEROSENE_PEROXIDE = 0;
 
     //===== CLASS VARIABLES
-    public static ArrayList<Fuel> fuels = new ArrayList<Fuel>();
+    public static Hash<Integer, Fuel> fuels = new Hash<>();
 
     //===== INSTANCE VARIABLES
     // ID particular to each specific Fuel
@@ -32,15 +32,19 @@ public abstract class Fuel{
                     molecularWeight;
 
     //===== CONSTRUCTOR
-    protected Fuel(int id, double density){
+    protected Fuel(int id){
         this.id = id;
-        this.density = density;
     }
 
     //===== CLASS METHODS
 
     public static Tuple<Integer> randomizeFuelParameters(){
-        Integer fuelID = Utility.rand(0, fuels.size() - 1);
+
+        // grab a valid index
+        Integer fuelID = Utility.rand(0, fuels.entries() - 1);
+        // return a fuel ID at that index
+        fuelID = fuels.keys().get(fuelID);
+
         //multiplied to keep it an int, will divide when time to make double again
         Integer fuelOxRatio = (int) (fuels.get(fuelID).randomizeFuelOxRatio() * 1000);
 

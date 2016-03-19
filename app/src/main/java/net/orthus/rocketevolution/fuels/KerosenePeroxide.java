@@ -13,15 +13,23 @@ public class KerosenePeroxide extends Fuel {
     //TODO when any Fuel class is initialized, it's ID will be checked and appropriate name passed
     // through. This is so String resources can be used properly
 
-    //=== CONSTRUCTORS
+    //===== CONSTRUCTORS
 
     /**
      * Use when recreating previously generated Fuel
      * @param name text-name of Fuel. String resource should be passed in.
      */
-    public KerosenePeroxide(String name, double density){
-        super(KEROSENE_PEROXIDE, density);
+    public KerosenePeroxide(String name, double density, double fuelOxRatio){
+        super(KEROSENE_PEROXIDE);
+
         this.name = name;
+        this.density = density;
+        this.fuelOxRatio = fuelOxRatio;
+
+        pressure = chamberPressure(fuelOxRatio);
+        temperature = adiabaticFlameTemp(pressure);
+        specificHeatRatio = specificHeatRatio(pressure);
+        molecularWeight = molecularWeight(pressure);
     }
 
     //===== OVERRIDES
@@ -71,7 +79,6 @@ public class KerosenePeroxide extends Fuel {
     protected double adiabaticFlameTemp(double pressure){
 
         //TODO to implement based off chamber pressure
-
         return Utility.rand(2500, 4000);
     }
 
@@ -96,15 +103,8 @@ public class KerosenePeroxide extends Fuel {
 
     @Override
     public Fuel create(double fuelOxRatio) {
-        KerosenePeroxide f = new KerosenePeroxide(name, density);
 
-        this.fuelOxRatio = fuelOxRatio;
-        pressure = chamberPressure(fuelOxRatio);
-        temperature = adiabaticFlameTemp(pressure);
-        specificHeatRatio = specificHeatRatio(pressure);
-        molecularWeight = molecularWeight(pressure);
-
-        return f;
+        return new KerosenePeroxide(name, density, fuelOxRatio);
     }
 
 

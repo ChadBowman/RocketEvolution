@@ -30,7 +30,7 @@ public class VarSum {
      * @param variables variables to add to sum
      */
     public VarSum(Variable... variables){
-        expression = new ArrayList<Variable>();
+        expression = new ArrayList<>();
 
         Collections.addAll(expression, variables);
 
@@ -70,7 +70,7 @@ public class VarSum {
      */
     public VarSum(double x1, double y1, double x2, double y2, boolean bounded){
 
-        this.expression = new ArrayList<Variable>();
+        this.expression = new ArrayList<>();
 
         // solve for line
         double m = (Variable.isEqual(x2 - x1, 0.0, TOLERANCE))?
@@ -125,7 +125,7 @@ public class VarSum {
      * @return new VarSum
      */
     public VarSum addVariables(Variable... vars){
-        ArrayList<Variable> list = new ArrayList<Variable>();
+        ArrayList<Variable> list = new ArrayList<>();
         list.addAll(expression);
         for(Variable v : vars)
             list.add(v);
@@ -140,7 +140,7 @@ public class VarSum {
      * @return product of this * ex
      */
     public VarSum multiply(VarSum ex){
-        ArrayList<Variable> replacement = new ArrayList<Variable>();
+        ArrayList<Variable> replacement = new ArrayList<>();
 
         // multiply each combination and add them to a new list
         for(int i=0; i < expression.size(); i++)
@@ -214,7 +214,7 @@ public class VarSum {
             bottom = 0;
 
         // solution set
-        ArrayList<Double> solutions = new ArrayList<Double>();
+        ArrayList<Double> solutions = new ArrayList<>();
 
         // set up the intervals
         double range = top - bottom;    // range of the domain
@@ -269,7 +269,7 @@ public class VarSum {
 
     /**
      * Used by solve to recursively converge on a solution. Will return the first solution it finds
-     * which is why solve() is needed to properly survey and split the domain up for converve()
+     * which is why solve() is needed to properly survey and split the domain up for converge()
      * @param bottom lower bound of domain
      * @param top upper  bound of domain
      * @return the first root found within the domain, NaN if no solution is found

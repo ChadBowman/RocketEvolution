@@ -24,8 +24,6 @@ public class Game extends Activity {
         // Set to full screen
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        KerosenePeroxide f = new KerosenePeroxide(getString(R.string.kerosene_peroxide), 810);
-        Fuel.fuels.add(f);
 
         setContentView(new Launchpad(this));
     }

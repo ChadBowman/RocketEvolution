@@ -7,6 +7,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 
 import net.orthus.rocketevolution.ui.Launchpad;
+import net.orthus.rocketevolution.utility.Utility;
 
 import java.util.BitSet;
 
@@ -15,31 +16,39 @@ import java.util.BitSet;
  */
 public class Background extends Graphic{
 
+    //===== INSTANCE VARIABLES
     private Bitmap image;
-    private int height;
+    private int x, y;
 
+    //===== CONSTRUCTOR
     public Background(Bitmap image){
 
-        this.scale = image.getWidth() / Launchpad.WIDTH;
+        scale = image.getWidth() / Launchpad.WIDTH;
+
         this.image = Bitmap.createScaledBitmap(image,
                 (int) (image.getWidth() * scale),
                 (int) (image.getHeight() * scale), true);
 
-        this.height = -this.image.getHeight() + Launchpad.HEIGHT;
+        x = 0;
+        y = -image.getHeight() + Launchpad.HEIGHT;
     }
 
     public void update(){}
 
     public void draw(Canvas canvas){
 
-        canvas.drawBitmap(image, 0, height, null);
+        canvas.drawBitmap(image, x, y, null);
+    }
+
+    public void set(int x, int y){
+        this.x = x;
+        this.y = y - image.getHeight() + Launchpad.HEIGHT;
     }
 
     public void reset(){
-        height = -this.image.getHeight() + Launchpad.HEIGHT;
+        x = 0;
+        y = -image.getHeight() + Launchpad.HEIGHT;
     }
 
-    public void addH(int h){
-        height += h;
-    }
-}
+
+} // Background

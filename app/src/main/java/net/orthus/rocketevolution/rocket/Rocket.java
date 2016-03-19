@@ -19,21 +19,16 @@ public class Rocket implements Kinetic{
     private static final double MAX_INERT_PROPORTION = 0.4; //TODO check if this is realistic
 
     private Chromosome chromosome;
-    private Fuselage body;
+    private Fuselage fuselage;
     private Kinematic kinematics;
 
-    // below temp
-    private Vector g;
-    private double pos, vel, acc;
-
     public Rocket(Chromosome chromosome){
-        body = new Fuselage(chromosome);
+        fuselage = new Fuselage(chromosome);
     }
 
     public Rocket(){
         chromosome = new Chromosome();
-        this.body = new Fuselage(chromosome); // base unit in CMs
-        g = new Vector(0, -10);
+        this.fuselage = new Fuselage(chromosome); // base unit in CMs
         this.kinematics = new Kinematic();
     }
 
@@ -41,54 +36,10 @@ public class Rocket implements Kinetic{
         return kinematics;
     }
 
-    public void update(long dt){
 
-        double s = dt * 1e-9;
-        Vector grav = new Vector(9.81, (float)-Math.PI/2);
 
-        // instant acceleration
-        if(body.getFuelMass() > 0) {
-            double pa = Physics.atmosphericPressure(kinematics.getPosition().getY());
-            kinematics.setAcceleration(body.acceleration(pa).add(grav));
-            kinematics.setRotAcc(1);
-            Utility.p("Acc: %s", kinematics.getAcceleration());
-            body.burnFuel(s);
-        }else
-            kinematics.setAcceleration(grav);
 
-        if(kinematics.getPosition().getY() <= 0 && kinematics.getAcceleration().getY() <= 0) {
-            kinematics.setVelocity(new Vector());
-        }else {
-            kinematics.setVelocity(kinematics.getVelocity().add(kinematics.getAcceleration().multiply(s)));
-            Utility.p("Vel: %s", kinematics.getVelocity());
-            //kinematics.getVelocity().setY(kinematics.getVelocity().getY()
-              //      + (kinematics.getAcceleration().getY() * s));
-            kinematics.setRotVel(kinematics.getRotVel() + (kinematics.getRotAcc() * s));
-        }
-        kinematics.setPosition(kinematics.getPosition().add(kinematics.getVelocity().multiply(s)));
-        Utility.p("Pos: %s", kinematics.getPosition());
-        //kinematics.getPosition().setY(
-          //      kinematics.getPosition().getY() + (kinematics.getVelocity().getY() * s));
-        kinematics.setRotPos(kinematics.getRotPos() + (kinematics.getRotVel() * s));
-        body.setRotation((float) kinematics.getRotPos());
-
-    } // update()
-
-    public double volume(){
-        return body.getVolume();
-    }
-
-    public double surfaceArea(){ return body.getSurfaceArea() / 10000; }
-    public double height(){ return body.getHeight() / 100; }
-    public double width(){ return body.getWidth() / 100; }
-    public long mass(){ return (long) (body.getMass() + 0.5); }
-    public String speed(){ return String.format("Speed: %.0f m/s", kinematics.getVelocity().getY()); }
-    public String acc(){ return String.format("Acceleration: %.0f m/s/s", kinematics.getAcceleration().getY()); }
-    public String alt(){ return String.format("Altitude: %.0f m", kinematics.getPosition().getY()); }
-    public double gal(){ return kinematics.getPosition().getY(); }
-    public String anAcc(){ return String.format("Angular Acc.: %.02f", kinematics.getRotAcc());}
-
-    public Fuselage getBody(){ return body; }
+    public Fuselage getFuselage(){ return fuselage; }
 
     //===== STATIC METHODS
 

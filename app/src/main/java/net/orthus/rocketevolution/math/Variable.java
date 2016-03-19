@@ -144,7 +144,7 @@ public class Variable {
      * @return value of Variable evaluated at x
      */
     public double evaluate(double x){
-        if(this.isNumber())
+        if(isNumber())
             return coefficient;
         else
             return Math.pow(x, power) * coefficient;

@@ -38,7 +38,8 @@ public class Chromosome {
             f += val + ", ";
 
         return String.format("[%s%d, %d, %d, %d, %d, %d]",
-                f, engine.first(),engine.last(), fuel.first(), fuel.last(), massDistribution.first(), massDistribution.last());
+                f, engine.first(),engine.last(), fuel.first(), fuel.last(),
+                massDistribution.first(), massDistribution.last());
     }
 
     // Return meaningful properties

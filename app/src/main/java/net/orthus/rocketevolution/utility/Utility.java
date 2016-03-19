@@ -12,6 +12,7 @@ public class Utility<O> {
 
     public static Random rand = new Random();
 
+
     public ArrayList<O> reverse(ArrayList<O> list){
 
         ArrayList<O> result = new ArrayList<O>();
@@ -32,9 +33,14 @@ public class Utility<O> {
         return result;
     }
 
+    //===== STATIC METHODS
+    public static double secondsElapsed(long nanoStart, long nanoEnd){
+        return (nanoEnd - nanoStart) / 1e9;
+    }
+
     public static int rand(int lowerBound, int upperBound){
 
-        Tuple<Integer> nums = new Tuple<Integer>(lowerBound, upperBound);
+        Tuple<Integer> nums = new Tuple<>(lowerBound, upperBound);
 
         // if bounds are not set correctly, flip them
         nums = (nums.first() > nums.last())? nums.swap() : nums;

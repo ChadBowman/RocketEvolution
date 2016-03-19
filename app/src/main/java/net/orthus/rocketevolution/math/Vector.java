@@ -5,7 +5,7 @@ package net.orthus.rocketevolution.math;
  *
  * Uses a pair of doubles as the components of a 2D vector.
  */
-public class Vector {
+public class Vector implements Comparable<Vector>{
 
     //=== CONSTANTS
     // Tolerance for double comparison
@@ -59,28 +59,24 @@ public class Vector {
      * Angles are converted to be between 0 and 2PI. Negative magnitudes are converted to an
      * equivalent positive magnitude.
      * @param magnitude Length of vector.
-     * @param theta Angle from the right side of the X-axis.
+     * @param angle Angle from the right side of the X-axis.
      */
-    public void setPolar(double magnitude, float theta){
+    public void setPolar(double magnitude, float angle){
 
         // if magnitude is negative, convert
         if(magnitude < 0){
             // point in the opposite direction
-            theta += Math.PI;
+            angle += Math.PI;
             // make magnitude positive
             magnitude *= -1;
         }
 
-        // if angle negative, make equivalently positive
-        while(theta < 0)
-            theta += 2 * Math.PI;
-
-        // bound from 0 to 2PI
-        theta %= 2 * Math.PI;
+        // normalize angle
+        angle = normalizeAngle(angle);
 
         // set components
-        x = magnitude * Math.cos(theta);
-        y = magnitude * Math.sin(theta);
+        x = magnitude * Math.cos(angle);
+        y = magnitude * Math.sin(angle);
 
     } // end setPolar
 
@@ -93,12 +89,21 @@ public class Vector {
         return new Vector(x + vector.getX(), y + vector.getY());
     }
 
+    public void add_(Vector vector){
+        x += vector.getX();
+        y += vector.getY();
+    }
+
     public Vector subtract(Vector vector){
         return new Vector(x - vector.getX(), y - vector.getY());
     }
 
     public Vector multiply(double scalar){
         return new Vector(x * scalar, y * scalar);
+    }
+
+    public Vector negate(){
+        return new Vector(-x, -y);
     }
 
     /**
@@ -197,11 +202,37 @@ public class Vector {
         return String.format("<%f, %f>", x, y);
     }
 
-    //=== ACCESSORS
+    //===== STATIC METHODS
+
+    public static float normalizeAngle(float angle){
+
+        // if angle negative, make equivalently positive
+        while(angle < 0)
+            angle += 2 * Math.PI;
+
+        // bound from 0 to 2PI
+        angle %= 2 * Math.PI;
+
+        return angle;
+    }
+
+    //===== ACCESSORS
 
     public double getX(){ return x; }
     public double getY(){ return y; }
     public void setX(double x){ this.x = x; }
     public void setY(double y){ this.y = y; }
+
+    @Override
+    public int compareTo(Vector v){
+
+        if(Math.abs(getMagnitude() - v.getMagnitude()) < DELTA)
+            return 0;
+
+        if(getMagnitude() > v.getMagnitude())
+            return 1;
+        else
+            return -1;
+    }
 
 } // end Vector

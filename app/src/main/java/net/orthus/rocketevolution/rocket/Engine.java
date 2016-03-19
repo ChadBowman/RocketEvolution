@@ -3,6 +3,7 @@ package net.orthus.rocketevolution.rocket;
 import android.graphics.Canvas;
 import android.graphics.Path;
 
+import net.orthus.rocketevolution.planets.Earth;
 import net.orthus.rocketevolution.ui.Bounds;
 import net.orthus.rocketevolution.ui.Graphic;
 import net.orthus.rocketevolution.environment.Physics;
@@ -25,132 +26,104 @@ public class Engine extends Graphic{
     //=== CONSTANTS
 
     // the radius of the throat exit arc is this factor times the throat radius
-    private static final double THROAT_EXIT_FACTOR = 0.382f;
-    private static final double EXPANSION_FACTOR = 0.75f;
+    private static final double THROAT_EXIT_FACTOR = 0.382;
+    private static final double EXPANSION_FACTOR = 0.75;
 
     //=== INSTANCE VARIABLES
-    private Fuel fuel;
-    private VectorGroup vectorGroup;
-
-    // fundamental ints which will be used in the chromosome
-    private int throatRadius,   // throat radius in mm
-            length,             // length/height in mm (distance from throat to exit)
-            exitRadius;     // exhaust radius in mm
-
-    private double throatArea,   // throat area in m^2
-            exitArea,           // exit area in m^2
-            chamberTemperature, // double version of temperature
-            chamberPressure,    // double version of pressure
-            massFlowRate,       // mass flow rate of engine (kg/s)
-            exitVelocity,       // exit velocity of gas (m/s)
-            exitPressure,       // exit pressure of gas (Pa)
-            temperature,        // chamber temp (K)
-            pressure;           // chamber pressure (Pa)
-
-
-    private Vector fromCOM;     // distance/angle from center of mass
 
     private Chromosome chromosome;
+    private Vector fromCOM;     // distance/angle from center of mass
+    private VectorGroup vectorRepresentation;
 
-    private double throttle; // TODO To be replaced with function
+    private double length,
+            exitRadius,  // exhaust radius in mm
+            exitArea,           // exit area in m^2
+            massFlowRate,       // mass flow rate of engine (kg/s)
+            exitVelocity,       // exit velocity of gas (m/s)
+            exitPressure;       // exit pressure of gas (Pa)
 
 
-    //=== CONSTRUCTORS
+    //===== CONSTRUCTORS
 
     /**
      * Creates an Engine with randomized attributes.
      * @param fromCOM location of Engine on Rocket from Rocket's center of mass.
      */
     public Engine(Chromosome chromosome, Vector fromCOM){
+
         this.chromosome = chromosome;
-        throatRadius = chromosome.getEngineThroatRadius();
-        Fuel fuel = chromosome.getFuel();
-        length = chromosome.getEngineLength();
-        temperature = fuel.getTemperature();
-        pressure = fuel.getPressure();
         this.fromCOM = fromCOM;
 
-        // Finish calculations
-        calculateEngineConstants(fuel.getSpecificHeatRatio(), fuel.getMolecularWeight());
+        double throatRadius = chromosome.getEngineThroatRadius();
+        length = (double) chromosome.getEngineLength();
 
-    } // end Constructor
-
-    //=== PRIVATE METHODS
-
-    /**
-     * Calculates engine's throat area, exit area; chamber pressure, temperature,
-     * mass flow rate, exit pressure, and exit velocity. All of these constants are later
-     * used to calculate engine thrust.
-     */
-    private void calculateEngineConstants(double specificHeat, double molarMass){
-
-        // Throttle
-        //TODO generate function instead
-        throttle = 1.0f;
+        Fuel fuel = chromosome.getFuel();
+        double chamberTemperature = fuel.getTemperature();
+        double chamberPressure = fuel.getPressure();
+        double specificHeat = fuel.getSpecificHeatRatio();
+        double molarMass = fuel.getMolecularWeight();
 
         // doubleS FOR CALCULATION
         // exhaust radius is a product of length and throat radius
-        exitRadius = calculateExhaustRadius();
-        // store areas in m^2
-        throatArea = (double) (Math.PI * Math.pow(throatRadius / 1000f, 2));
-        exitArea = (double) (Math.PI * Math.pow(exitRadius / 1000f, 2));
-        chamberPressure = (double) pressure;
-        chamberTemperature = (double) temperature;
+        exitRadius = calculateExhaustRadius(throatRadius, length);
+        exitArea = Math.PI * Math.pow(exitRadius / 1000.0, 2);
+        double throatArea = Math.PI * Math.pow(throatRadius / 1000.0, 2);
+        vectorRepresentation = vectorRepresentation(throatRadius, length, exitRadius);
 
         // CALCULATE ENGINE CONSTANTS
-        double throatPressure = throatPressure(specificHeat);
-        double throatTemp = throatTemperature(specificHeat);
-        massFlowRate = massFlowRate(throatPressure, throatTemp, molarMass, specificHeat);
-        double mach = (double) exitMach(specificHeat);
+        double throatPressure = throatPressure(specificHeat, chamberPressure);
+        double throatTemp = throatTemperature(specificHeat, chamberTemperature);
+        double mach =  exitMach(specificHeat, exitArea, throatArea);
+        massFlowRate = massFlowRate(throatPressure, throatTemp, molarMass, specificHeat, throatArea);
         exitPressure = exitPressure(throatTemp, mach, specificHeat);
-        exitVelocity = exitVelocity(exitPressure, molarMass, specificHeat);
+        exitVelocity = exitVelocity(exitPressure, molarMass, specificHeat, chamberTemperature);
 
-    }
+    } // end Constructor
 
-    private VectorGroup vectorRepresentation(){
+    //====== PRIVATE METHODS
+
+
+    private VectorGroup vectorRepresentation(double throatRadius, double length, double exitRadius){
         Vector[] vectors = new Vector[6];
 
         double controlY = length / 8.0;
         double controlX = Math.pow(controlY, EXPANSION_FACTOR) + throatRadius * 1.3;
 
-        double tr = (double) throatRadius;
-        double er = (double) exitRadius;
-        double le = (double) length;
 
-        vectors[0] = new Vector(tr, 0);
+        vectors[0] = new Vector(throatRadius, 0);
         vectors[1] = new Vector(controlX, -controlY);
-        vectors[2] = new Vector(er, -le);
-        vectors[3] = new Vector(-er, -le);
+        vectors[2] = new Vector(exitRadius, -length);
+        vectors[3] = new Vector(-exitRadius, -length);
         vectors[4] = new Vector(-controlX, -controlY);
-        vectors[5] = new Vector(-tr, 0);
+        vectors[5] = new Vector(-throatRadius, 0);
 
         return new VectorGroup(vectors);
     }
 
     /**
-     * Uses too much geometry ^.^ to find the radius of the end of the engine
+     * Uses geometry to find the radius of the end of the engine
      * @return the exhaust (end of the engine) radius in mm.
      */
-    private int calculateExhaustRadius(){
+    private double calculateExhaustRadius(double throatRadius, double length){
 
         // start with radius of circle
-        double r = (double) (throatRadius * THROAT_EXIT_FACTOR);
+        double r = throatRadius * THROAT_EXIT_FACTOR;
 
         // the slope at the end of the arc is 3^(1/2)
         // intersectionX is the location on the parabola where the slope is 3^(1/2)
-        double parabolaXIntersect = (double) Math.pow(Math.sqrt(3) / EXPANSION_FACTOR, 1 / (1 - EXPANSION_FACTOR));
-        double parabolaYIntersect = (double) Math.pow(parabolaXIntersect, EXPANSION_FACTOR);
+        double parabolaXIntersect = Math.pow(Math.sqrt(3) / EXPANSION_FACTOR, 1 / (1 - EXPANSION_FACTOR));
+        double parabolaYIntersect = Math.pow(parabolaXIntersect, EXPANSION_FACTOR);
 
         // total length minus the x-value of arc plus the overlap
-        double parabolaLength = (double) (length - (Math.sqrt(3) / 2f) * r) + parabolaXIntersect;
+        double parabolaLength = (length - (Math.sqrt(3) / 2.0) * r) + parabolaXIntersect;
 
         // get the height of the parabola at length, subtract overlap
-        double exRad = (double) Math.pow(parabolaLength, EXPANSION_FACTOR) - parabolaYIntersect;
+        double exRad = Math.pow(parabolaLength, EXPANSION_FACTOR) - parabolaYIntersect;
 
         // add the height of the arc and the throat radius
-        exRad += (r / 2f) + throatRadius;
+        exRad += (r / 2.0) + throatRadius;
 
-        return (int) (exRad + 0.5f);
+        return exRad;
     }
 
     // CALCULATING THRUST ===============================================================
@@ -161,9 +134,9 @@ public class Engine extends Graphic{
      * @param k specific heat ratio
      * @return pressure of gas at throat (Pa)
      */
-    private double throatPressure(double k){
+    private double throatPressure(double k, double cp){
         double p = 1 + ((k - 1) / 2);
-        p = (double) Math.pow(p, -1 * (k / (k - 1))) * chamberPressure;
+        p = (double) Math.pow(p, -1 * (k / (k - 1))) * cp;
         return p;
     }
 
@@ -172,9 +145,9 @@ public class Engine extends Graphic{
      * @param k specific heat ratio of gas
      * @return temperature of gas at throat (K)
      */
-    private double throatTemperature(double k){
+    private double throatTemperature(double k, double ct){
         double p = 1 + ((k - 1) / 2);
-        return chamberTemperature * (1 / p);
+        return ct * (1 / p);
     }
 
     /**
@@ -183,18 +156,19 @@ public class Engine extends Graphic{
      * @param tt throat temperature
      * @param m molar mass of fuel
      * @param k specific heat ratio of fuel
+     * @param ta throat area
      * @return mass flow rate (kg/s)
      */
-    private double massFlowRate(double pt, double tt, double m, double k){
-        return (double) ((throatArea * pt) / Math.sqrt((Physics.R * 1000 * tt) / (m * k)));
+    private double massFlowRate(double pt, double tt, double m, double k, double ta){
+        return (ta * pt) / Math.sqrt((Physics.R * 1000 * tt) / (m * k));
     }
 
     /**
      * @param k specific heat ratio of fuel
      * @return Mach number of gas at exit
      */
-    private double exitMach(double k){
-        double ratio = exitArea / throatArea;
+    private double exitMach(double k, double ea, double ta){
+        double ratio = ea / ta;
         double x = (2*k - 2) / (k + 1);
         double y = (k + 1) / 2;
         double z = (k - 1) / 2;
@@ -209,7 +183,7 @@ public class Engine extends Graphic{
         Double[] solutions = func.solve(0, 10);
 
         // return only the last (largest) solution
-        return solutions[solutions.length-1];
+        return solutions[solutions.length - 1];
     }
 
     /**
@@ -219,8 +193,8 @@ public class Engine extends Graphic{
      * @return pressure at the exit (Pa)
      */
     private double exitPressure(double pt, double n, double k){
-        double pe = (double) (((k - 1) / 2) * Math.pow(n, 2)) + 1;
-        pe = (double) (pt / Math.pow(pe, k / (k - 1)));
+        double pe = (((k - 1) / 2) * Math.pow(n, 2)) + 1;
+        pe = pt / Math.pow(pe, k / (k - 1));
         return pe;
     }
 
@@ -230,11 +204,11 @@ public class Engine extends Graphic{
      * @param k specific heat F of fuel
      * @return speed of gas at exit (m/s)
      */
-    private double exitVelocity(double pe, double m, double k){
-        double v = 1 - (double) Math.pow(pe / chamberPressure, (k - 1) / k);
-        v *= Physics.R * 1000 * chamberTemperature / m;
+    private double exitVelocity(double pe, double m, double k, double ct){
+        double v = 1 - Math.pow(pe / ct, (k - 1) / k);
+        v *= Physics.R * 1000 * ct / m;
         v *= (2 * k) / (k - 1);
-        v = (double) Math.sqrt(v);
+        v = Math.sqrt(v);
 
         return v;
     }
@@ -243,11 +217,12 @@ public class Engine extends Graphic{
      * @param mfr mass flow rate of engine
      * @param ve velocity of gas at exit
      * @param pe pressure of gas at exit
+     * @param ea exit area
      * @param pa ambient external pressure
      * @return engine thrust (N)
      */
-    private double thrust(double mfr, double ve, double pe, double pa){
-        return mfr * ve + ((pe - pa) * exitArea);
+    private double thrust(double mfr, double ve, double pe, double ea, double pa){
+        return mfr * ve + ((pe - pa) * ea);
     }
 
 
@@ -261,8 +236,8 @@ public class Engine extends Graphic{
         return new Engine(chromosome, fromCOM);
     }
 
-    public double currentMassFlowRate(){
-        return massFlowRate * throttle;
+    public double specificImpulse(){
+        return exitVelocity / Earth.acceleration(Earth.RADIUS);
     }
 
     /**
@@ -270,45 +245,44 @@ public class Engine extends Graphic{
      * @param pa ambient external pressure (Pa)
      * @return engine thrust (N)
      */
-    public double thrust(double pa){
-        //TODO change when throttle function figured out
-        return throttle * thrust(massFlowRate, exitVelocity, exitPressure, pa);
+    public Vector thrust(double pa, double throttle, double gimbal){
+
+        float angle = (float) (gimbal + (Math.PI / 2));
+        double force = thrust(throttle * massFlowRate, exitVelocity, exitPressure, exitArea, pa);
+
+        return new Vector(force, angle);
     }
 
 
-    public double torque(double pa){
+    public double torque(double pa, double throttle, double gimbal){
 
-        // Engines directly below rocket contribute no rotational force
-        double force = Math.sin(fromCOM.getAngle()) * thrust(pa);
-
-        // tangential to the COM, away from the bottom
-        double direction = (fromCOM.getAngle() <= Math.PI)?
-                (double)(fromCOM.getAngle() - (Math.PI / 4)):
-                (double)(fromCOM.getAngle() + (Math.PI / 4));
-
-        Vector tangentialThrust = new Vector(force, direction);
-
-        return fromCOM.cross(tangentialThrust);
+        return fromCOM.cross(thrust(pa, throttle, gimbal));
     }
 
     public Path path(float theta){
 
-        Vector[] v = vectorRepresentation().multiplyAll(scale).rotate(theta).getVectorArray();
+        Vector[] v = vectorRepresentation.multiplyAll(scale).rotate(theta).getVectorArray();
         Path path = new Path();
 
         // start at center top
         path.moveTo(bounds.centerX(), bounds.getTop());
 
-        path.lineTo(bounds.centerX() + (float) v[0].getX(), bounds.getTop() - (float) v[0].getY());
+        path.lineTo(bounds.centerX() + (float) v[0].getX(),
+                bounds.getTop() - (float) v[0].getY());
 
-        path.quadTo((float) (bounds.centerX() + v[1].getX()), (float) (bounds.getTop() - v[1].getY()),
-                (float) (bounds.centerX() + v[2].getX()), (float) (bounds.getTop() - v[2].getY()));
+        path.quadTo((float) (bounds.centerX() + v[1].getX()),
+                (float) (bounds.getTop() - v[1].getY()),
+                (float) (bounds.centerX() + v[2].getX()),
+                (float) (bounds.getTop() - v[2].getY()));
 
 
-        path.lineTo(bounds.centerX() + (float) v[3].getX(), bounds.getTop() - (float) v[3].getY());
+        path.lineTo(bounds.centerX() + (float) v[3].getX(),
+                bounds.getTop() - (float) v[3].getY());
 
-        path.quadTo(bounds.centerX() + (float) v[4].getX(), bounds.getTop() - (float) v[4].getY(),
-                bounds.centerX() + (float) v[5].getX(), bounds.getTop() - (float) v[5].getY());
+        path.quadTo(bounds.centerX() + (float) v[4].getX(),
+                bounds.getTop() - (float) v[4].getY(),
+                bounds.centerX() + (float) v[5].getX(),
+                bounds.getTop() - (float) v[5].getY());
 
         path.lineTo(bounds.centerX(), bounds.getTop());
 
@@ -329,7 +303,7 @@ public class Engine extends Graphic{
     @Override
     public void setBounds(Bounds bounds) {
         super.setBounds(bounds);
-        scale = bounds.width() / (exitRadius * 2f);
+        scale = (float) (bounds.width() / (exitRadius * 2));
     }
 
     //===== STATIC METHODS
@@ -346,7 +320,7 @@ public class Engine extends Graphic{
 
         Integer length = Utility.rand(min, max);
 
-        return new Tuple<Integer>(throatRadius, length);
+        return new Tuple<>(throatRadius, length);
 
     } // randomizedEngineParameters()
 
@@ -358,17 +332,13 @@ public class Engine extends Graphic{
      */
     public void setFromCOM(Vector v){ this.fromCOM = v; }
 
-    //TODO remove when function figured out
-    public void setThrottle(double t){ throttle = t; }
+    public double getWidth(){ return exitRadius / 500.0; }
 
-    /**
-     * @return engine length (height) in meters
-     */
-    public double getLength(){ return length / 1000f;}
+    public double getLength(){ return length / 1000.0; }
 
-    /**
-     * @return engine width (diameter) in meters
-     */
-    public double getWidth(){ return exitRadius * 2 / 1000f; }
+    public double getMassFlowRate(){
+        return massFlowRate;
+    }
+
 
 } // end Engine

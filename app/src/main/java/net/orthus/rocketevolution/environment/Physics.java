@@ -1,5 +1,7 @@
 package net.orthus.rocketevolution.environment;
 
+import net.orthus.rocketevolution.math.Vector;
+
 /**
  * Created by Chad on 8/5/2015.
  *
@@ -8,68 +10,23 @@ package net.orthus.rocketevolution.environment;
 public class Physics {
 
     // ideal gas constant
-    public static final float R = 8.3144621f;
+    public static final double R = 8.3144621;
+    public static final double G = 6.67408e-11; // m^3/(kg s^2)
 
-    /**
-     * Uses NASA model for atmosphere found here: grc.nasa.gov/www/k-12/airplane/atmosmet.html
-     * @param altitude distance from sea-level in meters
-     * @return ambient pressure in Pascals.
-     */
-    public static double atmosphericPressure(double altitude){
 
-        double p = 0;
 
-        // upper stratosphere (highest)
-        if(altitude > 25000){
-            p = ((2.99e-3 * altitude) + 141.89) / 216.6;
-            p = Math.pow(p, -11.388) * 2000.488;
-
-        // troposphere (lowest)
-        }else if(altitude < 11000){
-            p = ((6.49e-3 * altitude) + 288.14) / 288.08;
-            p = Math.pow(p, 5.256) * 101000.29;
-
-        // lower stratosphere (middle)
-        }else
-            p = Math.exp(1.73 - (1.57e-4 * altitude)) * 22000.65;
-
-        return p;
-
-    } // end atmosphericPressure
-
-    /**
-     * Uses NASA model for atmosphere to return what the temperature would be at a given altitude.
-     * @param altitude distance from sea-level in meters
-     * @return ambient temperature in degrees centigrade.
-     */
-    public static double atmosphericTemperature(double altitude){
-
-        double t = 0;
-
-        // upper stratosphere (highest)
-        if(altitude > 25000)
-            t = -131.21 + (0.00299 * altitude);
-
-        // troposphere (lowest)
-        else if(altitude < 11000)
-            t = 15.04 - (0.00649 * altitude);
-
-        // lower stratosphere (middle)
-        else
-            t = -56.46;
-
-        return t;
+    public static double gravitationalForce(double m1, double m2, double distance){
+        return (G * m1 * m2) / Math.pow(distance, 2);
     }
 
-    /**
-     * Uses NASA model for atmosphere to return what the density would be at a given altitude.
-     * @param altitude distance from sea-level in meters.
-     * @return density in kg/m^3
-     */
-    public static double atmosphericDensity(double altitude){
+    public static Vector gravitationalForce(double m1, double m2, Vector distance){
 
-        return atmosphericPressure(altitude)
-                / (1000.2869 * (atmosphericTemperature(altitude) + 273.1));
+        // calculate magnitude of force
+        double mag = gravitationalForce(m1, m2, distance.getMagnitude());
+
+        // return vector with new magnitude in the direction of m2
+        return distance.newMagnitude(mag);
     }
+
 
 } // end Physics
