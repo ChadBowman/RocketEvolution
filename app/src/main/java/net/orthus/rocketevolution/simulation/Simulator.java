@@ -38,7 +38,7 @@ public class Simulator {
 
         // INITIAL VALUES T = 0
         // set initial position to Earth Radius
-        k.setPosition(new Vector(0, Earth.RADIUS));
+        //k.setPosition(new Vector(0, Earth.RADIUS));
 
         // initial step
         Triple<Vector, Double, Double> step = rocket.getFuselage().step(
@@ -88,14 +88,19 @@ public class Simulator {
             fuelProportion = step.third;
 
             // Set Kinematics
-            acc = new Vector(step.first.getMagnitude(), k.getRotPos());
-            k.setAcceleration(acc.add(drag).add(gravity));
-            k.setVelocity(k.getVelocity().add(k.getAcceleration().multiply(dt)));
+            acc = new Vector(step.first.getMagnitude(), 0);//k.getRotPos());
+            k.setAcceleration(acc);//.add(drag).add(gravity));
+            k.addVelocity(k.getAcceleration(), dt);
             k.setPosition(k.getPosition().add(k.getVelocity().multiply(dt)));
-
+          /*  if(fuelProportion > 0.01)
+                Utility.p("[%.0f%%] A|%s V|%s P|%s", fuelProportion * 100,
+                        k.getAcceleration().toString(),
+                        k.getVelocity().toString(),
+                        k.getPosition().toString());*/
+          /*  Utility.p("Torque: %f", step.second);
             k.setRotAcc(step.second); // TODO: 18-Mar-16 add aerodynamic "inertia"
             k.setRotVel(k.getRotVel() + (k.getRotAcc() * dt));
-            k.setRotPos(k.getRotPos() + (k.getRotVel() * dt));
+            k.setRotPos(k.getRotPos() + (k.getRotVel() * dt));*/
 
             // update time
             time += dt;
@@ -118,7 +123,7 @@ public class Simulator {
 
         } // end while
 
-        Simulation sim = new Simulation(history, interval);
+        Simulation sim = new Simulation(history, interval, rud);
 
         return sim;
 

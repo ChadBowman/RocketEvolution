@@ -59,12 +59,12 @@ public class Guidance {
         return throts;
     }
 
-    public double[] gimbal(VarSum[] funct, double time){
+    public float[] gimbal(VarSum[] funct, double time){
 
-        double[] gimbs = new double[engineCount];
+        float[] gimbs = new float[engineCount];
 
         for(int i=0 ; i < engineCount; i++)
-            gimbs[i] = funct[i].evaluate(time);
+            gimbs[i] = (float) funct[i].evaluate(time);
 
 
         return gimbs;

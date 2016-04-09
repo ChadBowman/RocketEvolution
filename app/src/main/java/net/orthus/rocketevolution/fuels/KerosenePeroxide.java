@@ -79,14 +79,22 @@ public class KerosenePeroxide extends Fuel {
     protected double adiabaticFlameTemp(double pressure){
 
         //TODO to implement based off chamber pressure
-        return Utility.rand(2500, 4000);
+        //return Utility.rand(2500, 4000);
+        return 2700;
     }
 
     @Override
     protected double chamberPressure(double ratio){
 
         //TODO implement based off ratio
-        return Utility.rand(2.5e6, 2.3e7);
+        //return Utility.rand(2.5e6, 2.3e7);
+        return 2.9e6;
+    }
+
+    @Override
+    public Fuel create(double fuelOxRatio) {
+
+        return new KerosenePeroxide(name, density, fuelOxRatio);
     }
 
     /**
@@ -101,11 +109,25 @@ public class KerosenePeroxide extends Fuel {
         return Utility.rand(7.2, 8.2);
     }
 
-    @Override
-    public Fuel create(double fuelOxRatio) {
 
-        return new KerosenePeroxide(name, density, fuelOxRatio);
+    @Override
+    public int fuelOxRatioValidity(double ratio) {
+
+        if(ratio > 8.2)
+            return 1;
+        if(ratio < 7.2)
+            return -1;
+
+        return 0;
     }
 
+    @Override
+    public double minimumFuelOxRatio() {
+        return 7.2;
+    }
 
+    @Override
+    public double maximumFuelOxRatio() {
+        return 8.2;
+    }
 } // end KerosenePeroxide

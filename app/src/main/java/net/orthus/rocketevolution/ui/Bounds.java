@@ -5,34 +5,45 @@ package net.orthus.rocketevolution.ui;
  */
 public class Bounds {
 
-    private int left, right, top, bottom;
+    //===== INSTANCE VARIABLES
+    private float left, right, top, bottom;
 
-    public Bounds(int left, int right, int top, int bottom) {
+    //===== CONSTRUCTOR
+    public Bounds(float left, float right, float top, float bottom) {
+
+        setBounds(left, right, top, bottom);
+    }
+
+    //===== PUBLIC METHODS
+    public float width(){ return right - left; }
+    public float height(){ return bottom - top; }
+    public float centerX(){ return (width() / 2) + left; }
+    public float centerY(){ return (height() / 2) + top; }
+
+    public void setBounds(float left, float right, float top, float bottom){
         this.left = left;
         this.right = right;
         this.top = top;
         this.bottom = bottom;
     }
 
-    public int width(){
-        return right - left;
+    public boolean inBounds(float x, float y){
+
+        if(x > left && x < right)
+            if(y > top && y < bottom)
+                return true;
+
+        return false;
     }
 
-    public int height(){
-        return bottom - top;
+    public String toString(){
+        return String.format("Left %f Right %f Top %f Bottom %f", left, right, top, bottom);
     }
 
-    public int centerX(){
-        return (width() / 2) + left;
-    }
+    //===== ACCESSORS
+    public float getLeft() { return left; }
+    public float getRight() { return right; }
+    public float getTop() { return top; }
+    public float getBottom() { return bottom; }
 
-    public int centerY(){
-        return (height() / 2) + top;
-    }
-
-
-    public int getLeft() { return left; }
-    public int getRight() { return right; }
-    public int getTop() { return top; }
-    public int getBottom() { return bottom; }
-}
+} // Bounds

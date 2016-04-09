@@ -14,7 +14,6 @@ public class Physics {
     public static final double G = 6.67408e-11; // m^3/(kg s^2)
 
 
-
     public static double gravitationalForce(double m1, double m2, double distance){
         return (G * m1 * m2) / Math.pow(distance, 2);
     }

@@ -4,15 +4,15 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.Window;
 import android.view.WindowManager;
 
-import net.orthus.rocketevolution.fuels.Fuel;
-import net.orthus.rocketevolution.fuels.KerosenePeroxide;
 import net.orthus.rocketevolution.ui.Launchpad;
 
 
 public class Game extends Activity {
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,8 +24,8 @@ public class Game extends Activity {
         // Set to full screen
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-
         setContentView(new Launchpad(this));
+
     }
 
     @Override
@@ -50,4 +50,4 @@ public class Game extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-}
+} // Game

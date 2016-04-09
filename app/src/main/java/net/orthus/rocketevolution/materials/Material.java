@@ -9,7 +9,7 @@ import net.orthus.rocketevolution.utility.Tuple;
 public abstract class Material {
 
     //===== CLASS VARIABLES
-    public static Hash<Integer, Material> materials = new Hash<Integer, Material>();
+    public static Hash<Integer, Material> materials = new Hash<>();
 
     //===== INSTANCE VARIABLES
     private int id;

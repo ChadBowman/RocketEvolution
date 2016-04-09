@@ -38,7 +38,7 @@ public class Hash<K, V> {
 
     public List<Pair<K, V>> getList(){ return hash; }
 
-    public List<K> keys(){
+    public ArrayList<K> keys(){
 
         ArrayList<K> keys = new ArrayList<>();
 
@@ -49,7 +49,7 @@ public class Hash<K, V> {
         return keys;
     }
 
-    public List<V> values(){
+    public ArrayList<V> values(){
 
         ArrayList<V> vals = new ArrayList<>();
 

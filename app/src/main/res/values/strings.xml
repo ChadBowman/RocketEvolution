@@ -3,4 +3,7 @@
     <string name="action_settings">Settings</string>
 
     <string name="kerosene_peroxide">Kerosene &amp; Hydrogen Peroxide</string>
+    <string name="title_activity_population">Population</string>
+
+    <string name="hello_world">Hello world!</string>
 </resources>

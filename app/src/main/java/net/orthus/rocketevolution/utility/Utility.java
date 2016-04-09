@@ -40,7 +40,9 @@ public class Utility<O> {
 
     public static int rand(int lowerBound, int upperBound){
 
-        Tuple<Integer> nums = new Tuple<>(lowerBound, upperBound);
+        Tuple<Integer> nums = new Tuple<>();
+        nums.add(lowerBound);
+        nums.add(upperBound);
 
         // if bounds are not set correctly, flip them
         nums = (nums.first() > nums.last())? nums.swap() : nums;
@@ -58,7 +60,9 @@ public class Utility<O> {
 
     public static float rand(float lowerBound, float upperBound){
 
-        Tuple<Float> nums = new Tuple<Float>(lowerBound, upperBound);
+        Tuple<Float> nums = new Tuple<>();
+        nums.add(lowerBound);
+        nums.add(upperBound);
 
         // if bounds are not set correctly, flip them
         nums = (nums.first() > nums.last())? nums.swap() : nums;
@@ -74,7 +78,9 @@ public class Utility<O> {
 
     public static double rand(double lowerBound, double upperBound){
 
-        Tuple<Double> nums = new Tuple<Double>(lowerBound, upperBound);
+        Tuple<Double> nums = new Tuple<>();
+        nums.add(lowerBound);
+        nums.add(upperBound);
 
         // if bounds are not set correctly, flip them
         nums = (nums.first() > nums.last())? nums.swap() : nums;
@@ -83,7 +89,7 @@ public class Utility<O> {
         upperBound = nums.getList().get(1);
         double difference = upperBound - lowerBound;
 
-        // Return a proprotion of the difference plus the lowerBound
+        // Return a proportion of the difference plus the lowerBound
         // notice if rand is 0, lower is returned. If rand is 1, upper is returned
         return (rand.nextFloat() * difference) + lowerBound;
     }

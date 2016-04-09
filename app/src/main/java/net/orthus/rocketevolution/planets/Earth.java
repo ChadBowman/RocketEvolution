@@ -29,7 +29,7 @@ public class Earth implements Kinetic {
      * @param altitude distance from sea-level in meters
      * @return ambient pressure in Pascals.
      */
-    private static double atmosphericPressure(double altitude){
+    public static double atmosphericPressure(double altitude){
 
         altitude = (altitude < 0)? 0 : altitude;
         double p = 0;

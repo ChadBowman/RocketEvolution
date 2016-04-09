@@ -48,7 +48,11 @@ public abstract class Fuel{
         //multiplied to keep it an int, will divide when time to make double again
         Integer fuelOxRatio = (int) (fuels.get(fuelID).randomizeFuelOxRatio() * 1000);
 
-        return new Tuple<Integer>(fuelID, fuelOxRatio);
+        Tuple<Integer> result = new Tuple<>();
+        result.add(fuelID);
+        result.add(fuelOxRatio);
+
+        return result;
     }
 
     //===== ABSTRACT METHODS
@@ -56,7 +60,10 @@ public abstract class Fuel{
     protected abstract double specificHeatRatio(double pressure);
     protected abstract double adiabaticFlameTemp(double pressure);
     protected abstract double chamberPressure(double fuelOxRatio);
-    protected abstract double randomizeFuelOxRatio();
+    public abstract double randomizeFuelOxRatio();
+    public abstract int fuelOxRatioValidity(double ratio);
+    public abstract double minimumFuelOxRatio();
+    public abstract double maximumFuelOxRatio();
     public abstract Fuel create(double fuelOxRatio);
 
 

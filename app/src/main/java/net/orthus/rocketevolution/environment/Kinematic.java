@@ -22,6 +22,10 @@ public class Kinematic {
         acceleration = new Vector();
     }
 
+    public void addVelocity(Vector a, double dt){
+        velocity.add_(a.multiply(dt));
+    }
+
 
     //===== ACCESSORS
     public Vector getPosition(){ return position; }

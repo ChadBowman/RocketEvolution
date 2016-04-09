@@ -1,11 +1,10 @@
 package net.orthus.rocketevolution.rocket;
 
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.util.Pair;
 
+import net.orthus.rocketevolution.evolution.Chromosome;
 import net.orthus.rocketevolution.ui.Bounds;
 import net.orthus.rocketevolution.ui.Graphic;
 import net.orthus.rocketevolution.utility.*;
@@ -16,7 +15,6 @@ import net.orthus.rocketevolution.ui.Launchpad;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -31,7 +29,7 @@ public class Fuselage extends Graphic {
     //=== CONSTANTS
 
     //TODO units?
-    private static final int MAX_FUSELAGE_VECTOR_LENGTH = 1000;
+    public static final int MAX_FUSELAGE_VECTOR_LENGTH = 1000;
     private static final int MAX_NUMBER_OF_FUSELAGE_VECTORS = 10;
 
     // average density of all support systems
@@ -70,7 +68,7 @@ public class Fuselage extends Graphic {
     public Fuselage(Chromosome chromosome){
 
         this.chromosome = chromosome;
-        fuel = chromosome.getFuel();
+        fuel = chromosome.fuel();
         Tuple<Integer> magnitudes = chromosome.getFuselage();
 
         // List which will eventually make up the VectorGroup to return
@@ -105,9 +103,9 @@ public class Fuselage extends Graphic {
         centeredAtCOM = shape.reCenter(new Vector(0, centroid));
         engines = spawnEngines(centeredAtCOM);
 
-        double inert = chromosome.getInertProportion(),
-                fuel = chromosome.getFuelProportion();
-        dryMass = calculateDryMass(chromosome.getPayloadProportion(), inert);
+        double inert = chromosome.inertProportion(),
+                fuel = chromosome.fuelProportion();
+        dryMass = calculateDryMass(chromosome.payloadProportion(), inert);
         initialFuelMass = calculateInitialFuelMass(fuel);
         currentFuelMass = initialFuelMass;
 
@@ -280,7 +278,7 @@ public class Fuselage extends Graphic {
             currentFuelMass = 0;
     }
 
-    private double netTorque(double pa, double[] throttle, double[] gimbal){
+    private double netTorque(double pa, double[] throttle, float[] gimbal){
 
         Engine[] engines = enginesInOrder();
         double total = 0;
@@ -291,13 +289,14 @@ public class Fuselage extends Graphic {
         return total;
     }
 
-    private Vector netThrust(double pa, double[] throttle, double[] gimbal){
+    private Vector netThrust(double pa, double[] throttle, float[] gimbal){
 
         Engine[] engines = enginesInOrder();
         Vector total = new Vector();
 
         for(int i=0; i < engines.length; i++)
             total.add_(engines[i].thrust(pa, throttle[i], gimbal[i]));
+
 
         return total;
     }
@@ -317,7 +316,7 @@ public class Fuselage extends Graphic {
      * @return Vector: net acceleration on system, Double: net torque on system, Double: Fuel proportion.
      */
     public Triple<Vector, Double, Double>
-        step(double pa, double dt, double[] throttle, double[] gimbal){
+        step(double pa, double dt, double[] throttle, float[] gimbal){
 
         Vector acc;     // instantaneous acceleration on rocket due to thrust
         double angAcc;  // instantaneous angular acceleration
@@ -342,9 +341,15 @@ public class Fuselage extends Graphic {
 
     public double mass(){ return currentMass(); }
 
+    public void setEnginePaint(Paint paint){
+
+        for(Engine e : engines.values())
+            e.setPaint(paint);
+    }
 
     public Path path(float theta){
 
+        float scale = getScale();
         // rotate the negation of the center vector
         Vector center = new Vector(0, -centroid);
         // rotate about center of mass, then return to original center for shape
@@ -352,7 +357,7 @@ public class Fuselage extends Graphic {
                 .reCenter(center).getVectorList();
 
         // useful measurements
-        int yAxis = bounds.centerX();
+        int yAxis = (int) getBounds().centerX();
 
         // find new X axis
         // grab the vector with smallest Y value
@@ -361,7 +366,7 @@ public class Fuselage extends Graphic {
             smallestY = (vectors.get(i).getY() < smallestY.getY()) ? vectors.get(i) : smallestY;
 
         // place smallestY vector on bottom of boundary and follow up to reveal new X axis
-        int xAxis = (int) (bounds.getBottom() - (scale * -smallestY.getY()));
+        int xAxis = (int) (getBounds().getBottom() - (scale * -smallestY.getY()));
 
         //TODO temp variables for testing
         relativeCenter = (int) (xAxis - (scale * centroid));
@@ -401,21 +406,23 @@ public class Fuselage extends Graphic {
     @Override
     public void draw(Canvas canvas) {
 
-        canvas.drawPath(path(rotation), paint);
+        canvas.drawPath(path(getRotation()), getPaint());
 
-        int x, y, rad, height;
+        int x, y, r, height;
         for(Integer key : engines.keys()){
 
            Engine e = engines.get(key);
+
             x = (int) rotatedLocations[key].getX();
             y = (int) rotatedLocations[key].getY();
-            rad = (int) (e.getWidth() * 100 * scale / 2);
-            height = (int) (e.getLength() * 100 * scale);
-            e.setRotation(rotation);
-            e.setBounds(new Bounds(x - rad, x + rad, y, y + height));
+            r = (int) (e.getWidth() * 100 * getScale() / 2);
+            height = (int) (e.getLength() * 100 * getScale());
+            e.setRotation(getRotation());
+            e.setBounds(new Bounds(x - r, x + r, y, y + height));
             e.draw(canvas);
         }
-    }
+
+    } // draw()
 
     /**
      * Overridden so each time the bounds are changed, the scale is changed to accommodate
@@ -426,27 +433,14 @@ public class Fuselage extends Graphic {
         super.setBounds(bounds);
 
         // get scaling factors
-        float xFactor = (float) (bounds.width() / width);
-        float yFactor = (float) (bounds.height() / height);
-
+        float x = (float) (bounds.width() / width);
+        float y = (float) (bounds.height() / height);
         // use the smallest one
-        scale = (xFactor < yFactor)? xFactor : yFactor;
-    }
-
-    @Override
-    public void setPaint(Paint paint) {
-        super.setPaint(paint);
-
-        Paint paint1 = new Paint();
-        paint1.setColor(Color.BLACK);
-        paint1.setStyle(Paint.Style.FILL);
-        for(Engine e : engines.values())
-            e.setPaint(paint1);
-
+        float scale = (x < y)? x : y;
+        super.setScale(scale);
     }
 
     //===== STATIC METHODS
-
 
     /**
      * Creates a list of allowable vector magnitudes for later Fuselage generation.
@@ -468,7 +462,7 @@ public class Fuselage extends Graphic {
         return list;
     }
 
-    //=== ACCESSORS
+    //===== ACCESSORS
     public int engineCount(){ return engines.entries(); }
     public double getVolume(){ return volume; }
     public double getSurfaceArea() { return surfaceArea; }

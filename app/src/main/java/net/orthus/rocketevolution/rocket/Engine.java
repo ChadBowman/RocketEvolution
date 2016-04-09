@@ -1,8 +1,11 @@
 package net.orthus.rocketevolution.rocket;
 
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Path;
 
+import net.orthus.rocketevolution.evolution.Chromosome;
 import net.orthus.rocketevolution.planets.Earth;
 import net.orthus.rocketevolution.ui.Bounds;
 import net.orthus.rocketevolution.ui.Graphic;
@@ -21,13 +24,16 @@ import net.orthus.rocketevolution.math.VectorGroup;
  * section of a circle from pi3/4 to pi11/12 with the half-parabola of sqrt(x). The two shapes are
  * intersected where their slopes are the same (x=1/12 for parabola).
  */
-public class Engine extends Graphic{
+public class Engine extends Graphic {
 
     //=== CONSTANTS
+    public static final int MIN_THROAT_RADIUS = 50;
+    public static final int MAX_THROAT_RADIUS = 1000;
 
     // the radius of the throat exit arc is this factor times the throat radius
     private static final double THROAT_EXIT_FACTOR = 0.382;
     private static final double EXPANSION_FACTOR = 0.75;
+    private static final int MAX_LENGTH_FACTOR = 10;
 
     //=== INSTANCE VARIABLES
 
@@ -54,10 +60,10 @@ public class Engine extends Graphic{
         this.chromosome = chromosome;
         this.fromCOM = fromCOM;
 
-        double throatRadius = chromosome.getEngineThroatRadius();
-        length = (double) chromosome.getEngineLength();
+        double throatRadius = chromosome.engineThroatRadius();
+        length = (double) chromosome.engineLength();
 
-        Fuel fuel = chromosome.getFuel();
+        Fuel fuel = chromosome.fuel();
         double chamberTemperature = fuel.getTemperature();
         double chamberPressure = fuel.getPressure();
         double specificHeat = fuel.getSpecificHeatRatio();
@@ -77,6 +83,12 @@ public class Engine extends Graphic{
         massFlowRate = massFlowRate(throatPressure, throatTemp, molarMass, specificHeat, throatArea);
         exitPressure = exitPressure(throatTemp, mach, specificHeat);
         exitVelocity = exitVelocity(exitPressure, molarMass, specificHeat, chamberTemperature);
+
+        // Set Same Paint for all Engines
+        Paint paint = new Paint();
+        paint.setColor(Color.BLACK);
+        paint.setStyle(Paint.Style.FILL);
+        setPaint(paint);
 
     } // end Constructor
 
@@ -222,6 +234,7 @@ public class Engine extends Graphic{
      * @return engine thrust (N)
      */
     private double thrust(double mfr, double ve, double pe, double ea, double pa){
+
         return mfr * ve + ((pe - pa) * ea);
     }
 
@@ -245,24 +258,27 @@ public class Engine extends Graphic{
      * @param pa ambient external pressure (Pa)
      * @return engine thrust (N)
      */
-    public Vector thrust(double pa, double throttle, double gimbal){
+    public Vector thrust(double pa, double throttle, float gimbal){
 
-        float angle = (float) (gimbal + (Math.PI / 2));
+
         double force = thrust(throttle * massFlowRate, exitVelocity, exitPressure, exitArea, pa);
 
-        return new Vector(force, angle);
+        //Utility.p("Thrust: %f, Angle: %f", force, gimbal);
+
+        return new Vector(force, gimbal);
     }
 
 
-    public double torque(double pa, double throttle, double gimbal){
+    public double torque(double pa, double throttle, float gimbal){
 
         return fromCOM.cross(thrust(pa, throttle, gimbal));
     }
 
     public Path path(float theta){
 
-        Vector[] v = vectorRepresentation.multiplyAll(scale).rotate(theta).getVectorArray();
+        Vector[] v = vectorRepresentation.multiplyAll(getScale()).rotate(theta).getVectorArray();
         Path path = new Path();
+        Bounds bounds = getBounds();
 
         // start at center top
         path.moveTo(bounds.centerX(), bounds.getTop());
@@ -296,31 +312,44 @@ public class Engine extends Graphic{
 
     @Override
     public void draw(Canvas canvas) {
-        canvas.drawPath(path(rotation), paint);
-        //canvas.drawCircle(bounds.centerX(), bounds.getTop(), 10, paint);
+        canvas.drawPath(path(getRotation()), getPaint());
     }
 
     @Override
     public void setBounds(Bounds bounds) {
         super.setBounds(bounds);
-        scale = (float) (bounds.width() / (exitRadius * 2));
+
+        float x = (float) (bounds.width() / exitRadius * 2);
+        float y = (float) (bounds.height() / length);
+        // use smallest
+        float scale = (x < y)? x : y;
+        super.setScale(scale);
     }
 
     //===== STATIC METHODS
+
+    public static int minimumLength(int throatRadius){
+        // min length is twice the length of the exit arc
+        return (int) (Math.sqrt(3.0) * THROAT_EXIT_FACTOR * throatRadius);
+    }
+
+    public static int maximumLength(int throatRadius){
+        return MAX_LENGTH_FACTOR * throatRadius;
+    }
+
     public static Tuple<Integer> randomizedEngineParameters(){
 
         // 50mm to 1m
-        Integer throatRadius = Utility.rand(50, 1000);
+        Integer throatRadius = Utility.rand(MIN_THROAT_RADIUS, MAX_THROAT_RADIUS);
 
         // length of exhaust bell from throat to end
-        // min length is twice the length of the exit arc
-        int min = (int) (Math.sqrt(3.0) * THROAT_EXIT_FACTOR * throatRadius);
-        // max is 10 times the throat radius
-        int max = 10 * throatRadius;
+        Integer length = Utility.rand(minimumLength(throatRadius), maximumLength(throatRadius));
 
-        Integer length = Utility.rand(min, max);
+        Tuple<Integer> t = new Tuple<>();
+        t.add(throatRadius);
+        t.add(length);
 
-        return new Tuple<>(throatRadius, length);
+        return t;
 
     } // randomizedEngineParameters()
 

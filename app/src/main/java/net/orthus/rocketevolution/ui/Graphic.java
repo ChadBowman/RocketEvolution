@@ -8,25 +8,27 @@ import android.graphics.Paint;
  */
 public abstract class Graphic {
 
-    protected Bounds bounds;
-    protected Paint paint;
-    protected float scale;
-    protected float rotation;
+    //===== INSTANCE VARIABLES
+    private Bounds bounds;
+    private Paint paint;
+    private float scale;
+    private float rotation;
 
+    //===== ABSTRACT METHODS
     public abstract void update();
     public abstract void draw(Canvas canvas);
 
-    public Bounds getBounds() {
-        return bounds;
-    }
+    //===== ACCESSORS
+    public Bounds getBounds() { return bounds; }
     public Paint getPaint() { return paint; }
+    public float getScale() { return scale; }
+    public float getRotation() { return rotation; }
 
-    public void setPaint(Paint paint) { this.paint = paint;}
-    public void setBounds(Bounds bounds) {
-        this.bounds = bounds;
-    }
+    public void setBounds(Bounds bounds) { this.bounds = bounds; }
+    public void setPaint(Paint paint) { this.paint = paint; }
     public void setScale(float scale){ this.scale = scale; }
     public void setRotation(float rotation){
         this.rotation = rotation % (float)(Math.PI * 2);
     }
-}
+
+} // Graphic

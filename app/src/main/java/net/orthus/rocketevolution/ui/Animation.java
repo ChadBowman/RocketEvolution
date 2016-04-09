@@ -1,7 +1,6 @@
 package net.orthus.rocketevolution.ui;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 
 import net.orthus.rocketevolution.utility.Utility;
@@ -12,29 +11,34 @@ import net.orthus.rocketevolution.utility.Utility;
 public class Animation extends Graphic{
 
     //===== INSTANCE VARIABLES
-    private Bitmap[] sprites;
-    private int currentFrame;
-    private float delay;
 
-    private long startTime;
-    private boolean play, repeat;
+    private Bitmap[] original,      // unscaled originals
+                    sprites;        // sprites in sequence
+    private int currentFrame;       // index of current frame to draw
+    private float delay;            // delay between frame changes
+    private long startTime;         // time to compare against for delay
+    private boolean enable,         // draw when true
+                    repeat;         // loop through sequence when true
+
+    //===== CONSTRUCTOR
 
     public Animation(Bitmap spriteSheet, int inRow, int inColumn){
 
-        // default update rate
+        // defaults
         delay = 0.1f; // 10 times a second
-        play = false;
+        enable = true;
         repeat = true;
         currentFrame = 0;
 
-        sprites = new Bitmap[inRow * inColumn];
+        // split sheet into sequential bitmaps
+        original = new Bitmap[inRow * inColumn];
 
         int width = spriteSheet.getWidth() / inRow;
         int height = spriteSheet.getHeight() / inColumn;
 
         // for each sprite
         int row = 0, column = 0;
-        for(int i=0; i < sprites.length; i++, column++){
+        for(int i=0; i < original.length; i++, column++){
 
             // if transitioning to the next row
             if(i % inRow == 0 && i > 0) {
@@ -43,31 +47,34 @@ public class Animation extends Graphic{
             }
 
             // cut out sprite from sheet
-            sprites[i] = Bitmap.createBitmap(spriteSheet,
+            original[i] = Bitmap.createBitmap(spriteSheet,
                     column * width, row * height, width, height);
 
         } // for
 
+        // use original sprites to start
+        sprites = original;
+
     } // Animation()
 
     //===== PUBLIC METHODS
-    public void togglePlay(){
 
-        if(play)
-            setPlay(false);
+    public void toggleEnable(){
+
+        if(enable)
+            setEnable(false);
         else
-            setPlay(true);
+            setEnable(true);
     }
 
     //===== OVERRIDES
     @Override
     public void update() {
-
-
+        
         long now = System.nanoTime();
 
-        // animation set to play and time has elapsed enough for frame change
-        if(play && Utility.secondsElapsed(startTime, now) > delay) {
+        // animation is enabled and time has elapsed enough for frame change
+        if(enable && Utility.secondsElapsed(startTime, now) > delay) {
             if(repeat) {
                 currentFrame = (currentFrame + 1) % sprites.length;
 
@@ -76,19 +83,22 @@ public class Animation extends Graphic{
                 if (currentFrame < sprites.length)
                     currentFrame++;
                 else
-                    setPlay(false);
+                    setEnable(false);
             }
             // reset startTime
             startTime = System.nanoTime();
         }
 
-    } // update
+    } // update()
 
     @Override
     public void draw(Canvas canvas) {
 
-        if(play)
-            canvas.drawBitmap(sprites[currentFrame], bounds.getLeft(), bounds.getTop(), paint);
+        if(enable) {
+            update();
+            canvas.drawBitmap(sprites[currentFrame],
+                    getBounds().getLeft(), getBounds().getTop(), getPaint());
+        }
 
     }
 
@@ -97,18 +107,20 @@ public class Animation extends Graphic{
         super.setBounds(bounds);
 
         // get scaling factors
-        float xFactor = (float) bounds.width() / sprites[0].getWidth();
-        float yFactor = (float) bounds.height() / sprites[0].getWidth();
-
+        float x = bounds.width() / original[0].getWidth();
+        float y = bounds.height() / original[0].getWidth();
         // use the smallest one
-        scale = (xFactor < yFactor)? xFactor : yFactor;
+        float scale = (x < y)? x : y;
+        super.setScale(scale);
 
-        for(int i=0; i < sprites.length; i++)
-            sprites[i] = Bitmap.createScaledBitmap(sprites[i],
-                    (int) (sprites[i].getWidth() * scale),
-                    (int) (sprites[i].getHeight() * scale),
+        // properly scale new bitmaps
+        for(int i=0; i < original.length; i++)
+            sprites[i] = Bitmap.createScaledBitmap(original[i],
+                    (int) (original[i].getWidth() * scale),
+                    (int) (original[i].getHeight() * scale),
                     false);
-    }
+        
+    } // setBounds()
 
     //===== ACCESSORS
     public void setRepeat(boolean repeat){
@@ -119,10 +131,10 @@ public class Animation extends Graphic{
         this.delay = delay;
     }
 
-    public void setPlay(boolean play){
-        this.play = play;
+    public void setEnable(boolean enable){
+        this.enable = enable;
 
-        if(play)
+        if(enable)
             startTime = System.nanoTime();
 
         currentFrame = 0;

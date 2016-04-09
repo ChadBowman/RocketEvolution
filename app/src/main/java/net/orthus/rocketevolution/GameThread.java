@@ -10,7 +10,7 @@ import net.orthus.rocketevolution.ui.Launchpad;
  */
 public class GameThread extends Thread {
 
-    private int FPS = 30;
+    private int FPS = 10;
     private float averageFPS;
     private SurfaceHolder surfaceHolder;
     private Launchpad launchpad;
