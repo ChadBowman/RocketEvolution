@@ -7,8 +7,14 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Toast;
 
+import net.orthus.rocketevolution.fuels.Fuel;
+import net.orthus.rocketevolution.fuels.KerosenePeroxide;
+import net.orthus.rocketevolution.simulation.Fitness;
 import net.orthus.rocketevolution.ui.Launchpad;
+
+import java.io.File;
 
 
 public class Game extends Activity {
@@ -24,8 +30,19 @@ public class Game extends Activity {
         // Set to full screen
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        setContentView(new Launchpad(this));
+        // Add fuels
+        Fuel.fuels.add(Fuel.KEROSENE_PEROXIDE, new KerosenePeroxide("", 810, 8));
 
+        File PLAYER_FILE = new File(getFilesDir(), "player");
+        // Load player's file
+        Player player = Player.load(PLAYER_FILE);
+
+        // player not there, create new one
+        if(player == null)
+            player = new Player();
+
+        // Start launchpad up
+        setContentView(new Launchpad(this, player));
     }
 
     @Override

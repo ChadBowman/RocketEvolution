@@ -2,6 +2,7 @@ package net.orthus.rocketevolution.simulation;
 
 
 import net.orthus.rocketevolution.utility.Hash;
+import net.orthus.rocketevolution.utility.Utility;
 
 import java.util.ArrayList;
 
@@ -43,5 +44,10 @@ public class Simulation {
 
     public int getInterval(){ return interval; }
     public int getSize(){ return history.size(); }
+
+    public void print(int x){
+        for(Frame f : history)
+            Utility.p("[%d] %s", x, f.toString());
+    }
 
 } // end Simulation

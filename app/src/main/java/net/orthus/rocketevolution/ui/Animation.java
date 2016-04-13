@@ -28,7 +28,7 @@ public class Animation extends Graphic{
         delay = 0.1f; // 10 times a second
         enable = true;
         repeat = true;
-        currentFrame = 0;
+        currentFrame = -1;
 
         // split sheet into sequential bitmaps
         original = new Bitmap[inRow * inColumn];
@@ -75,21 +75,23 @@ public class Animation extends Graphic{
 
         // animation is enabled and time has elapsed enough for frame change
         if(enable && Utility.secondsElapsed(startTime, now) > delay) {
+
             if(repeat) {
                 currentFrame = (currentFrame + 1) % sprites.length;
 
             } else {
                 // non-repeating animation
-                if (currentFrame < sprites.length)
+                if (currentFrame < sprites.length-1)
                     currentFrame++;
                 else
-                    setEnable(false);
+                    enable = false;
             }
             // reset startTime
             startTime = System.nanoTime();
         }
 
     } // update()
+
 
     @Override
     public void draw(Canvas canvas) {
@@ -99,7 +101,6 @@ public class Animation extends Graphic{
             canvas.drawBitmap(sprites[currentFrame],
                     getBounds().getLeft(), getBounds().getTop(), getPaint());
         }
-
     }
 
     @Override
@@ -131,13 +132,15 @@ public class Animation extends Graphic{
         this.delay = delay;
     }
 
+
     public void setEnable(boolean enable){
         this.enable = enable;
 
-        if(enable)
+        if(enable) {
             startTime = System.nanoTime();
+            currentFrame = -1;
+        }
 
-        currentFrame = 0;
     }
 
 } // Animation

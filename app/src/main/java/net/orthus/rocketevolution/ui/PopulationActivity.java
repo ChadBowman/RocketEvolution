@@ -8,7 +8,6 @@ import android.widget.ExpandableListView;
 
 import net.orthus.rocketevolution.R;
 import net.orthus.rocketevolution.population.Generation;
-import net.orthus.rocketevolution.population.Population;
 import net.orthus.rocketevolution.rocket.Rocket;
 import net.orthus.rocketevolution.utility.Hash;
 
@@ -19,7 +18,7 @@ import java.util.UUID;
 
 public class PopulationActivity extends AppCompatActivity {
 
-    ArrayList<Generation> population;
+    ArrayList<ArrayList<String>> population;
     Hash<String, List<String>> generations;
     List<String> genList;
     ExpandableListView expList;
@@ -31,23 +30,13 @@ public class PopulationActivity extends AppCompatActivity {
         setContentView(R.layout.activity_population);
 
         expList = (ExpandableListView) findViewById(R.id.pop_list);
-        population = ((Population) savedInstanceState.get("pop")).getPopulation();
+        population = (ArrayList<ArrayList<String>>) savedInstanceState.get("pop");
 
-
-        for(int i=0; i < population.size(); i++) {
-            ArrayList<String> list = new ArrayList<>();
-
-            Hash<UUID, Rocket> gen = population.get(i).getGeneration();
-            for(UUID key : gen.keys())
-                list.add("Rocket " + key);
-
-            generations.add("Generation " + i, list);
-        }
 
         genList = new ArrayList<>(generations.keys());
 
-        adapter = new ExpandableListAdapter(this, generations, genList);
-        expList.setAdapter(adapter);
+        //adapter = new ExpandableListAdapter(this, generations, genList);
+        //expList.setAdapter(adapter);
     }
 
     @Override

@@ -29,7 +29,7 @@ public class Fuselage extends Graphic {
     //=== CONSTANTS
 
     //TODO units?
-    public static final int MAX_FUSELAGE_VECTOR_LENGTH = 1000;
+    public static final int MAX_FUSELAGE_VECTOR_LENGTH = 500;
     private static final int MAX_NUMBER_OF_FUSELAGE_VECTORS = 10;
 
     // average density of all support systems
@@ -61,6 +61,7 @@ public class Fuselage extends Graphic {
 
     private Fuel fuel;
     private Chromosome chromosome;
+    private Path path;
 
 
     //=== CONSTRUCTORS
@@ -108,6 +109,10 @@ public class Fuselage extends Graphic {
         dryMass = calculateDryMass(chromosome.payloadProportion(), inert);
         initialFuelMass = calculateInitialFuelMass(fuel);
         currentFuelMass = initialFuelMass;
+
+        // Graphic elements
+        setPaint(new Paint());
+        path = new Path();
 
     } // end Fuselage()
 
@@ -289,7 +294,14 @@ public class Fuselage extends Graphic {
         return total;
     }
 
-    private Vector netThrust(double pa, double[] throttle, float[] gimbal){
+
+    private double currentFuelProportion(){
+        return currentFuelMass / initialFuelMass;
+    }
+
+    //=== PUBLIC METHODS
+
+    public Vector netThrust(double pa, double[] throttle, float[] gimbal){
 
         Engine[] engines = enginesInOrder();
         Vector total = new Vector();
@@ -300,12 +312,6 @@ public class Fuselage extends Graphic {
 
         return total;
     }
-
-    private double currentFuelProportion(){
-        return currentFuelMass / initialFuelMass;
-    }
-
-    //=== PUBLIC METHODS
 
     /**
      *
@@ -322,8 +328,7 @@ public class Fuselage extends Graphic {
         double angAcc;  // instantaneous angular acceleration
 
         if(currentFuelMass > 0) {
-
-            acc = netThrust(pa, throttle, gimbal).multiply(1 / currentMass());
+            acc = netThrust(pa, throttle, gimbal).multiply(1.0 / currentMass());
             angAcc = netTorque(pa, throttle, gimbal) / currentInertia();
 
             // burn fuel at current rate
@@ -375,8 +380,8 @@ public class Fuselage extends Graphic {
         //Array to save locations
         rotatedLocations = new Vector[vectors.size()];
 
-        // create path
-        Path path = new Path();
+        // reset path
+        path.reset();
 
         // start at top
         int x = (int) (yAxis + (vectors.get(0).getX() * scale));

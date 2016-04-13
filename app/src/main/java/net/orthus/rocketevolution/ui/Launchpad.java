@@ -6,28 +6,19 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.util.Pair;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import net.orthus.rocketevolution.Game;
 import net.orthus.rocketevolution.GameThread;
+import net.orthus.rocketevolution.Player;
 import net.orthus.rocketevolution.R;
-import net.orthus.rocketevolution.environment.Physics;
-import net.orthus.rocketevolution.evolution.Chromosome;
-import net.orthus.rocketevolution.fuels.Fuel;
-import net.orthus.rocketevolution.fuels.KerosenePeroxide;
 import net.orthus.rocketevolution.math.Vector;
-import net.orthus.rocketevolution.planets.Earth;
 import net.orthus.rocketevolution.population.Generation;
-import net.orthus.rocketevolution.population.Population;
-import net.orthus.rocketevolution.rocket.Engine;
 import net.orthus.rocketevolution.rocket.Rocket;
 import net.orthus.rocketevolution.simulation.Fitness;
 import net.orthus.rocketevolution.simulation.Frame;
-import net.orthus.rocketevolution.simulation.Simulation;
-import net.orthus.rocketevolution.simulation.Simulator;
 import net.orthus.rocketevolution.utility.Utility;
 
 import java.io.IOException;
@@ -52,30 +43,47 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
     // Graphic elements
     private Background bg;
     private Animation expload, exhaust;
-    private Bounds rocketBound;
+    private Bounds rocketBound =
+            new Bounds(WIDTH / 3, WIDTH - (WIDTH / 3), HEIGHT / 4, HEIGHT - (HEIGHT / 4));
     private Label popLabel, fitLabel;
+    private Paint whiteFill;
 
     // Player elements
-    private Population population;
+    private Player player;
     private int fitness;
 
     // Temp elements
     private Rocket currentRocket;
+    private Generation currentGen;
     private int workingIndex;
     private ArrayList<UUID> ids;
     private Frame previousFrame, currentFrame;
     private boolean rud;
 
-    public Launchpad(Context context){
+    public Launchpad(Context context, Player player){
         super(context);
         getHolder().addCallback(this);
         setFocusable(true);
+        this.player = player;
+
+        whiteFill = new Paint();
+        whiteFill.setColor(Color.WHITE);
+        whiteFill.setStyle(Paint.Style.FILL);
+
+        if(player.getPopulation().size() == 0) {
+            currentGen = new Generation(9);
+            currentGen.runSims();
+        }
+
     }
 
+
+    //===== PRIVATE METHODS
+
+
+    //===== INTERFACES
     @Override
     public void surfaceCreated(SurfaceHolder holder){
-        //KEEP AT TOP
-        Fuel.fuels.add(Fuel.KEROSENE_PEROXIDE, new KerosenePeroxide("", 810, 8));
 
         float s = WIDTH / 15f;
         float w = (4 * WIDTH / 7f) - s;
@@ -99,31 +107,20 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
         int fithx = WIDTH / 3;
         int fithy = HEIGHT / 4;
 
-        rocketBound = new Bounds(fithx, WIDTH - fithx, fithy, HEIGHT - fithy);
-
         // Create animations
         expload = new Animation(BitmapFactory.decodeResource(getResources(), R.drawable.explosion_large), 5, 5);
         expload.setBounds(rocketBound);
-        expload.setRepeat(false);
+        //expload.setRepeat(false);
 
         exhaust = new Animation(BitmapFactory.decodeResource(getResources(), R.drawable.exhaust1), 1, 3);
 
         // Create background
         bg = new Background(BitmapFactory.decodeResource(getResources(), R.drawable.bgtest));
 
-        // Create initial generation
-        population = new Population();
-        population.add(new Generation(3));
-        population.get(0).runSims();
-
-
-        // Set list of current gen's keys
-        ids = population.get(0).getGeneration().keys();
-
         // Set default fitness selection
         fitness = Fitness.ALTITUDE;
 
-        workingIndex = 0;
+        workingIndex = -1;
         rud = false;
 
         // // DON'T TOUCH BELOW! // //
@@ -134,6 +131,11 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
 
     } // surfaceCreate
 
+    private Rocket fetchRocket(){
+        workingIndex++;
+        return currentGen.getGeneration().values().get(workingIndex);
+    }
+
 
     public void update(){
 
@@ -143,41 +145,35 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
         // no rocket currently on screen
         if(currentRocket == null || (rud && Utility.secondsElapsed(rudTime, currentTime) > 5) ){
 
-
-            // grab the first rocket
-            currentRocket = population.get(0).getGeneration().get(ids.get(workingIndex));
+            // grab the next rocket
+            currentRocket = fetchRocket();
+            currentRocket.getSimulation().print(workingIndex);
             currentRocket.getFuselage().setBounds(rocketBound);
+            currentRocket.getFuselage().setPaint(whiteFill);
 
-            Paint paint = new Paint();
-            paint.setColor(Color.WHITE);
-            paint.setStyle(Paint.Style.FILL);
-            currentRocket.getFuselage().setPaint(paint);
             // set launch time
             launchTime = System.nanoTime();
             // get current frame
             currentFrame = currentRocket.getSimulation().position(Utility.secondsElapsed(launchTime, currentTime));
             currentRocket.getFuselage().setRotation(currentFrame.getDirection());
-            // update index
-            workingIndex++;
             rud = false;
+            bg.reset();
 
-        // rocket is currently selected
+            // rocket is currently selected
         }else if(!rud){
 
             if(currentRocket.getSimulation().isRUD(Utility.secondsElapsed(launchTime, currentTime))){
                 rud = true;
                 rudTime = System.nanoTime();
-            }else {
 
+            }else {
                 // Update frames
                 previousFrame = currentFrame;
                 currentFrame = currentRocket.getSimulation().position(Utility.secondsElapsed(launchTime, currentTime));
                 currentRocket.getFuselage().setRotation(currentFrame.getDirection());
 
-                // Get velocity to update background
-                Vector v = currentFrame.getPosition().subtract(previousFrame.getPosition())
-                        .multiply(currentRocket.getSimulation().getInterval());
-                bg.setVelocity(v);
+                //update background
+                bg.setVelocity(currentFrame.getVelocity());
                 rud = false;
             }
         }
@@ -192,13 +188,14 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
         final float scaleFactorY = getHeight() / (HEIGHT * 1f);
         canvas.scale(scaleFactorX, scaleFactorY);
 
-
         bg.draw(canvas);
 
-        if(rud)
+        if(rud) {
+            //expload.setEnable(true);
             expload.draw(canvas);
-        else
+        }else {
             currentRocket.getFuselage().draw(canvas);
+        }
 
         // Draw UI Objects
         popLabel.draw(canvas);
@@ -211,12 +208,14 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public boolean onTouchEvent(MotionEvent event){
 
+        rud = true;
+
         if(event.getAction() == MotionEvent.ACTION_DOWN){
 
 
             if(popLabel.activate(event.getX(), event.getY())) {
                 Intent i = new Intent(getContext(), PopulationActivity.class);
-                i.putExtra("pop", population);
+                i.putExtra("pop", player.getPopulation());
                 getContext().startActivity(new Intent(getContext(), PopulationActivity.class));
             }
         }

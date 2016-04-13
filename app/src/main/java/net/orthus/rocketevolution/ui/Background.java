@@ -40,14 +40,19 @@ public class Background extends Graphic{
 
     public void update(){
         float s = (float) Utility.secondsElapsed(previous, System.nanoTime());
-        add((float) velocity.getX() * -s, (float)velocity.getY() * -s);
+        add((float) velocity.getX() * s, (float) velocity.getY() * s);
 
+        y = (y < -image.getHeight() + Launchpad.HEIGHT)? -image.getHeight() + Launchpad.HEIGHT : y;
+
+        previous = System.nanoTime();
     }
 
     public void draw(Canvas canvas){
+        update();
 
         canvas.drawBitmap(image, x, y, null);
 
+        // if part of the background is off the screen, loop it around
         if(x > 0)
             canvas.drawBitmap(image, x - image.getWidth(), y, null);
         if(x < 0)
@@ -57,7 +62,7 @@ public class Background extends Graphic{
             x = 0;
     }
 
-    public void add(float x, float y){
+    public void add(double x, double y){
         this.x += x;
         this.y += y;
     }

@@ -48,6 +48,7 @@ public class Engine extends Graphic {
             exitVelocity,       // exit velocity of gas (m/s)
             exitPressure;       // exit pressure of gas (Pa)
 
+    private Path path;
 
     //===== CONSTRUCTORS
 
@@ -90,6 +91,8 @@ public class Engine extends Graphic {
         paint.setStyle(Paint.Style.FILL);
         setPaint(paint);
 
+        path = new Path();
+
     } // end Constructor
 
     //====== PRIVATE METHODS
@@ -100,7 +103,6 @@ public class Engine extends Graphic {
 
         double controlY = length / 8.0;
         double controlX = Math.pow(controlY, EXPANSION_FACTOR) + throatRadius * 1.3;
-
 
         vectors[0] = new Vector(throatRadius, 0);
         vectors[1] = new Vector(controlX, -controlY);
@@ -260,10 +262,8 @@ public class Engine extends Graphic {
      */
     public Vector thrust(double pa, double throttle, float gimbal){
 
-
+        gimbal = (float) (Math.PI / 2) + gimbal;
         double force = thrust(throttle * massFlowRate, exitVelocity, exitPressure, exitArea, pa);
-
-        //Utility.p("Thrust: %f, Angle: %f", force, gimbal);
 
         return new Vector(force, gimbal);
     }
@@ -276,8 +276,8 @@ public class Engine extends Graphic {
 
     public Path path(float theta){
 
+        path.reset();
         Vector[] v = vectorRepresentation.multiplyAll(getScale()).rotate(theta).getVectorArray();
-        Path path = new Path();
         Bounds bounds = getBounds();
 
         // start at center top
@@ -286,11 +286,10 @@ public class Engine extends Graphic {
         path.lineTo(bounds.centerX() + (float) v[0].getX(),
                 bounds.getTop() - (float) v[0].getY());
 
-        path.quadTo((float) (bounds.centerX() + v[1].getX()),
-                (float) (bounds.getTop() - v[1].getY()),
-                (float) (bounds.centerX() + v[2].getX()),
-                (float) (bounds.getTop() - v[2].getY()));
-
+        path.quadTo(bounds.centerX() + (float) v[1].getX(),
+                (bounds.getTop() - (float) v[1].getY()),
+                (bounds.centerX() + (float) v[2].getX()),
+                (bounds.getTop() - (float) v[2].getY()));
 
         path.lineTo(bounds.centerX() + (float) v[3].getX(),
                 bounds.getTop() - (float) v[3].getY());
@@ -308,7 +307,7 @@ public class Engine extends Graphic {
     } // end path
 
     @Override
-    public void update() { }
+    public void update() {}
 
     @Override
     public void draw(Canvas canvas) {

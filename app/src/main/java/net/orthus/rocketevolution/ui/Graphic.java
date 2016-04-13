@@ -14,6 +14,7 @@ public abstract class Graphic {
     private float scale;
     private float rotation;
 
+
     //===== ABSTRACT METHODS
     public abstract void update();
     public abstract void draw(Canvas canvas);

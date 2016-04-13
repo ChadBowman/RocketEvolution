@@ -38,7 +38,7 @@ public class Simulator {
 
         // INITIAL VALUES T = 0
         // set initial position to Earth Radius
-        //k.setPosition(new Vector(0, Earth.RADIUS));
+        k.setPosition(new Vector(0, Earth.RADIUS));
 
         // initial step
         Triple<Vector, Double, Double> step = rocket.getFuselage().step(
@@ -50,7 +50,6 @@ public class Simulator {
         k.setAcceleration(step.first.add(Earth.gravity(rocket.getFuselage().mass(), k.getPosition())));
 
         k.setRotAcc(step.second);
-
         double fuelProportion = step.third;
 
 
@@ -71,7 +70,7 @@ public class Simulator {
             pos = k.getPosition().newMagnitude(k.getPosition().getMagnitude() - Earth.RADIUS);
 
             // add frame to list
-            history.add(new Frame(pos, k.getRotPos(), fuelProportion));
+            history.add(new Frame(pos, k.getVelocity(), k.getRotPos(), fuelProportion));
 
             // TAKE A STEP THROUGH SYSTEM
             // use previous position/velocity
@@ -88,16 +87,12 @@ public class Simulator {
             fuelProportion = step.third;
 
             // Set Kinematics
-            acc = new Vector(step.first.getMagnitude(), 0);//k.getRotPos());
-            k.setAcceleration(acc);//.add(drag).add(gravity));
-            k.addVelocity(k.getAcceleration(), dt);
+            //acc = new Vector(step.first.getMagnitude(), 0f);//k.getRotPos());
+            k.setAcceleration(step.first.add(drag).add(gravity));
+            k.setVelocity(k.getVelocity().add(k.getAcceleration().multiply(dt)));
             k.setPosition(k.getPosition().add(k.getVelocity().multiply(dt)));
-          /*  if(fuelProportion > 0.01)
-                Utility.p("[%.0f%%] A|%s V|%s P|%s", fuelProportion * 100,
-                        k.getAcceleration().toString(),
-                        k.getVelocity().toString(),
-                        k.getPosition().toString());*/
-          /*  Utility.p("Torque: %f", step.second);
+
+            /*  Utility.p("Torque: %f", step.second);
             k.setRotAcc(step.second); // TODO: 18-Mar-16 add aerodynamic "inertia"
             k.setRotVel(k.getRotVel() + (k.getRotAcc() * dt));
             k.setRotPos(k.getRotPos() + (k.getRotVel() * dt));*/
@@ -106,8 +101,8 @@ public class Simulator {
             time += dt;
 
             // check for crash
-            if(k.getPosition().getMagnitude() < Earth.RADIUS * 0.5) {
-                Utility.p("%f @ %.2f", k.getPosition().getMagnitude() / Earth.RADIUS, time);
+            if(k.getPosition().getMagnitude() < Earth.RADIUS * 0.95) {
+                Utility.p("RUD @ %.2fs", time);
                 rud = true;
             }
 

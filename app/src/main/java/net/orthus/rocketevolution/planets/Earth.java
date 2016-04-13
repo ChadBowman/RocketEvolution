@@ -93,7 +93,7 @@ public class Earth implements Kinetic {
     //===== PUBLIC STATIC METHODS
 
     public static double pressure(Vector position){
-        return atmosphericTemperature(position.getMagnitude() - RADIUS);
+        return atmosphericPressure(position.getMagnitude() - RADIUS);
     }
 
     public static Vector gravity(double mass, Vector position){
