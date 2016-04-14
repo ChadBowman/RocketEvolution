@@ -46,8 +46,8 @@ public class Simulation {
     public int getSize(){ return history.size(); }
 
     public void print(int x){
-        for(Frame f : history)
-            Utility.p("[%d] %s", x, f.toString());
+        for(int i=0; i < history.size(); i++)
+            Utility.p("[%d|%.0f] %s", x, i / (float) interval, history.get(i).toString());
     }
 
 } // end Simulation

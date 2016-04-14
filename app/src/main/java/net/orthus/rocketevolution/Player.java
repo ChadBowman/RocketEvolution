@@ -8,6 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.UUID;
 
 /**
  * Created by Chad on 10-Apr-16.
@@ -22,6 +23,9 @@ public class Player implements Serializable {
         population = new ArrayList<>();
     }
 
+    public void addGeneration(ArrayList<String> ids){
+        population.add(ids);
+    }
 
     public boolean write(File file){
 

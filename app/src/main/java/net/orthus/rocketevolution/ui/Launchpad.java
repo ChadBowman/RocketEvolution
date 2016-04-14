@@ -6,9 +6,11 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.Toast;
 
 import net.orthus.rocketevolution.Game;
 import net.orthus.rocketevolution.GameThread;
@@ -24,6 +26,7 @@ import net.orthus.rocketevolution.utility.Utility;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Random;
 import java.util.UUID;
 
@@ -32,9 +35,11 @@ import java.util.UUID;
  */
 public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
 
-    public static final int WIDTH = 1440;
-    public static final int HEIGHT = 2560;
+    //public static final int deviceWidth = 1440;
+    //public static final int deviceHeight = 2560;
     public static final int MILLION = 1000000;
+
+    private static final int LAUNCH_DELAY = 3;
 
     // Management elements
     private GameThread thread;
@@ -42,164 +47,178 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
 
     // Graphic elements
     private Background bg;
-    private Animation expload, exhaust;
-    private Bounds rocketBound =
-            new Bounds(WIDTH / 3, WIDTH - (WIDTH / 3), HEIGHT / 4, HEIGHT - (HEIGHT / 4));
-    private Label popLabel, fitLabel;
-    private Paint whiteFill;
+    private Animation explode, exhaust;
+    private Bounds rocketBound, exploBound;
+    private Label popLabel, fitLabel, ticker;
 
     // Player elements
     private Player player;
     private int fitness;
+    private int deviceWidth, deviceHeight;
 
     // Temp elements
     private Rocket currentRocket;
     private Generation currentGen;
     private int workingIndex;
-    private ArrayList<UUID> ids;
     private Frame previousFrame, currentFrame;
     private boolean rud;
 
-    public Launchpad(Context context, Player player){
+    public Launchpad(Context context, Player player, int width, int height){
         super(context);
         getHolder().addCallback(this);
         setFocusable(true);
-        this.player = player;
 
-        whiteFill = new Paint();
-        whiteFill.setColor(Color.WHITE);
-        whiteFill.setStyle(Paint.Style.FILL);
+        this.player = player;
+        deviceWidth = width;
+        deviceHeight = height;
+
+        rocketBound = new Bounds(deviceWidth / 3, deviceWidth - (deviceWidth / 3),
+                        deviceHeight / 4, deviceHeight - (deviceHeight / 4));
+
+        exploBound = new Bounds(deviceWidth / 3, 2/3f * deviceWidth,
+                deviceHeight / 2, 3/4f * deviceHeight);
+
 
         if(player.getPopulation().size() == 0) {
             currentGen = new Generation(9);
             currentGen.runSims();
+            player.addGeneration(currentGen.idList());
         }
 
     }
 
 
     //===== PRIVATE METHODS
+    private void createUIObjects(){
+
+        float s = deviceWidth / 15f;
+        float w = (4 * deviceWidth / 7f) - s;
+
+        // Population label
+        popLabel = new Label(
+                "Population", BitmapFactory.decodeResource(getResources(), R.drawable.button0));
+        popLabel.setBounds(new Bounds(s, s + w, deviceHeight / 20f, 2 * deviceHeight / 20f));
+        popLabel.setFont(Color.WHITE, 70, Typeface.DEFAULT);
+        popLabel.setTextLocation(90, 100);
+
+        // Optimization label
+        fitLabel = new Label(
+                "Optimise", BitmapFactory.decodeResource(getResources(), R.drawable.button0));
+        fitLabel.setBounds(new Bounds(deviceWidth - s - w, deviceWidth - s, deviceHeight / 20f, 2 * deviceHeight / 20f));
+        fitLabel.setFont(Color.WHITE, 70, Typeface.DEFAULT);
+        fitLabel.setTextLocation(100, 100);
+
+        // Ticker label
+        ticker = new Label("T-00s", null);
+        ticker.setBounds(new Bounds(deviceWidth / 3f, 2 * deviceWidth / 3f, 19/20f * deviceHeight,  deviceHeight));
+        ticker.setFont(Color.WHITE, 150, Typeface.DEFAULT);
+
+        // Explosion animation
+        explode = new Animation(BitmapFactory.decodeResource(getResources(), R.drawable.explosion_large), 5, 5);
+        explode.setBounds(exploBound);
+        //explode.setRepeat(false);
+
+        // Exhaust animation
+        exhaust = new Animation(BitmapFactory.decodeResource(getResources(), R.drawable.exhaust1), 3, 1);
+
+        // Create background
+        bg = new Background(BitmapFactory.decodeResource(getResources(), R.drawable.bgtest), deviceWidth, deviceHeight);
+    }
+
+    private void nextRocket(){
+        Utility.p("Grabbing new rocket.");
+        // get new rocket from generation
+        currentRocket = currentGen.getGeneration().values().get(workingIndex);
+        Utility.p("Merlin: %s", currentRocket.getFuselage().merlin1DRatio());
+        currentRocket.getSimulation().print(workingIndex);
+        launchTime = System.nanoTime();
+        // set up
+        currentRocket.getFuselage().setBounds(rocketBound);
+        currentRocket.getFuselage().setEngineExhaust(exhaust);
+        //currentRocket.getSimulation().print(workingIndex);
+        workingIndex++;
+
+        rud = false;
+        bg.update();
+    }
 
 
     //===== INTERFACES
     @Override
     public void surfaceCreated(SurfaceHolder holder){
 
-        float s = WIDTH / 15f;
-        float w = (4 * WIDTH / 7f) - s;
-
-        // Population label
-        popLabel = new Label(
-                "Population", BitmapFactory.decodeResource(getResources(), R.drawable.button0));
-        popLabel.setBounds(new Bounds(s, s + w, HEIGHT / 20f, 2 * HEIGHT / 20f));
-
-        fitLabel = new Label(
-                "Optimise", BitmapFactory.decodeResource(getResources(), R.drawable.button0));
-        fitLabel.setBounds(new Bounds(WIDTH - s - w, WIDTH - s, HEIGHT / 20f, 2 * HEIGHT / 20f));
-
-        Paint p = new Paint();
-        p.setColor(Color.WHITE);
-        p.setTextSize(70);
-        popLabel.setPaint(p);
-        fitLabel.setPaint(p);
-
-        // Create the location of rocket on screen
-        int fithx = WIDTH / 3;
-        int fithy = HEIGHT / 4;
-
-        // Create animations
-        expload = new Animation(BitmapFactory.decodeResource(getResources(), R.drawable.explosion_large), 5, 5);
-        expload.setBounds(rocketBound);
-        //expload.setRepeat(false);
-
-        exhaust = new Animation(BitmapFactory.decodeResource(getResources(), R.drawable.exhaust1), 1, 3);
-
-        // Create background
-        bg = new Background(BitmapFactory.decodeResource(getResources(), R.drawable.bgtest));
+        createUIObjects();
 
         // Set default fitness selection
         fitness = Fitness.ALTITUDE;
 
-        workingIndex = -1;
-        rud = false;
+        // Set initial conditions
+        workingIndex = 0;
 
-        // // DON'T TOUCH BELOW! // //
+        // Grab first rocket
+        nextRocket();
+
+        // Start the graphics thread
         thread = new GameThread(getHolder(), this);
-        // Safely start the game
         thread.setRunning(true);
         thread.start();
 
     } // surfaceCreate
 
-    private Rocket fetchRocket(){
-        workingIndex++;
-        return currentGen.getGeneration().values().get(workingIndex);
-    }
-
 
     public void update(){
 
-        // Update the game state
+        // Grab a new time
         currentTime = System.nanoTime();
 
-        // no rocket currently on screen
-        if(currentRocket == null || (rud && Utility.secondsElapsed(rudTime, currentTime) > 5) ){
+        // Last rocket exploded
+        if(rud && Utility.secondsElapsed(rudTime, currentTime) > 3){
 
             // grab the next rocket
-            currentRocket = fetchRocket();
-            currentRocket.getSimulation().print(workingIndex);
-            currentRocket.getFuselage().setBounds(rocketBound);
-            currentRocket.getFuselage().setPaint(whiteFill);
+            nextRocket();
 
-            // set launch time
-            launchTime = System.nanoTime();
-            // get current frame
-            currentFrame = currentRocket.getSimulation().position(Utility.secondsElapsed(launchTime, currentTime));
-            currentRocket.getFuselage().setRotation(currentFrame.getDirection());
-            rud = false;
-            bg.reset();
-
-            // rocket is currently selected
+        // current rocket still going
         }else if(!rud){
 
+            // check for RUD
             if(currentRocket.getSimulation().isRUD(Utility.secondsElapsed(launchTime, currentTime))){
                 rud = true;
                 rudTime = System.nanoTime();
 
             }else {
                 // Update frames
-                previousFrame = currentFrame;
                 currentFrame = currentRocket.getSimulation().position(Utility.secondsElapsed(launchTime, currentTime));
-                currentRocket.getFuselage().setRotation(currentFrame.getDirection());
+                //Utility.p("CF[%d] %s", workingIndex, currentFrame.toString());
+                //currentRocket.getFuselage().setRotation(currentFrame.getDirection());
+                ticker.setText(String.format(Locale.US, "T + %.0f", Utility.secondsElapsed(launchTime, currentTime)));
 
                 //update background
-                bg.setVelocity(currentFrame.getVelocity());
-                rud = false;
+                //bg.setVelocity(currentFrame.getVelocity().multiply(0.001));
             }
         }
 
-    }
+    } // update()
 
     public void draw(Canvas canvas){
-        // Canvas state
         super.draw(canvas);
         final int savedState = canvas.save();
-        final float scaleFactorX = getWidth() / (WIDTH * 1f);
-        final float scaleFactorY = getHeight() / (HEIGHT * 1f);
-        canvas.scale(scaleFactorX, scaleFactorY);
 
+
+        // Draw background first
         bg.draw(canvas);
 
         if(rud) {
             //expload.setEnable(true);
-            expload.draw(canvas);
+            explode.draw(canvas);
         }else {
             currentRocket.getFuselage().draw(canvas);
         }
 
-        // Draw UI Objects
+        // Draw labels
         popLabel.draw(canvas);
         fitLabel.draw(canvas);
+        ticker.draw(canvas);
+
         canvas.restoreToCount(savedState);
 
     } // end draw
@@ -216,7 +235,8 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
             if(popLabel.activate(event.getX(), event.getY())) {
                 Intent i = new Intent(getContext(), PopulationActivity.class);
                 i.putExtra("pop", player.getPopulation());
-                getContext().startActivity(new Intent(getContext(), PopulationActivity.class));
+                i.putExtra("test", "Rocket");
+                getContext().startActivity(i);
             }
         }
 
@@ -224,7 +244,7 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height){ }
+    public void surfaceChanged(SurfaceHolder holder, int format, int deviceWidth, int deviceHeight){ }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder){

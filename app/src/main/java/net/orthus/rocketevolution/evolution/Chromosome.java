@@ -1,5 +1,7 @@
 package net.orthus.rocketevolution.evolution;
 
+import android.content.Intent;
+
 import net.orthus.rocketevolution.materials.Material;
 import net.orthus.rocketevolution.rocket.Engine;
 import net.orthus.rocketevolution.rocket.Fuselage;
@@ -19,6 +21,7 @@ public class Chromosome {
     private Tuple<Integer> fuel;
     private Tuple<Integer> massDistribution;
     private Tuple<Integer> material;
+    private Tuple<Integer> color;
     // Guidance system
 
 
@@ -28,13 +31,15 @@ public class Chromosome {
                       Tuple<Integer> engine,
                       Tuple<Integer> fuel,
                       Tuple<Integer> massDistribution,
-                      Tuple<Integer> material ){
+                      Tuple<Integer> material,
+                      Tuple<Integer> color){
 
         this.fuselage = fuselage;
         this.engine = engine;
         this.fuel = fuel;
         this.massDistribution = massDistribution;
         this.material = material;
+        this.color = color;
     }
 
     //===== PUBLIC METHODS
@@ -48,9 +53,9 @@ public class Chromosome {
                 Engine.randomizedEngineParameters(),
                 Fuel.randomizeFuelParameters(),
                 Rocket.randomizeMassDistributions(),
-                Material.randomizeMaterialParameters());
+                Material.randomizeMaterialParameters(),
+                Fuselage.randomColor());
     }
-
 
 
     // Return meaningful properties
@@ -78,9 +83,11 @@ public class Chromosome {
         return engine.last();
     }
 
+    public int fuselageColor(){ return color.first(); }
+
     public int valueCount(){
         return fuselage.size() + engine.size()
-                + fuel.size() + massDistribution.size() + material.size();
+                + fuel.size() + massDistribution.size() + material.size() + color.size();
     }
 
     public Tuple<Integer> combined(){
@@ -91,6 +98,7 @@ public class Chromosome {
         comb.addAll(fuel);
         comb.addAll(massDistribution);
         comb.addAll(material);
+        comb.addAll(color);
 
         return comb;
     }
@@ -101,9 +109,9 @@ public class Chromosome {
         for(Integer val : fuselage.getList())
             f += val + ", ";
 
-        return String.format("[%s%d, %d, %d, %d, %d, %d]",
+        return String.format("[%s%d, %d, %d, %d, %d, %d, %d]",
                 f, engine.first(), engine.last(), fuel.first(), fuel.last(),
-                massDistribution.first(), massDistribution.last());
+                massDistribution.first(), massDistribution.last(), color.first());
     }
     //===== PRIVATE METHODS
 

@@ -19,8 +19,8 @@ import java.util.UUID;
 public class PopulationActivity extends AppCompatActivity {
 
     ArrayList<ArrayList<String>> population;
-    Hash<String, List<String>> generations;
-    List<String> genList;
+    Hash<String, List<String>> generations = new Hash<>();
+    List<String> genList = new ArrayList<>();
     ExpandableListView expList;
     ExpandableListAdapter adapter;
 
@@ -30,13 +30,21 @@ public class PopulationActivity extends AppCompatActivity {
         setContentView(R.layout.activity_population);
 
         expList = (ExpandableListView) findViewById(R.id.pop_list);
-        population = (ArrayList<ArrayList<String>>) savedInstanceState.get("pop");
 
+        population = (ArrayList<ArrayList<String>>) getIntent().getExtras().get("pop");
+        //String r = (String) getIntent().getExtras().get("test");
 
-        genList = new ArrayList<>(generations.keys());
+        for(int i=0; i < population.size(); i++){
+            genList.add("Generation " + i+1);
+            generations.add("Generation " + i+1, population.get(i));
+        }
+        ///ArrayList<String> l = new ArrayList<>();
+        //l.add(r);
+        //genList.add("Generation 1");
+        //generations.add("Generation 1", l);
 
-        //adapter = new ExpandableListAdapter(this, generations, genList);
-        //expList.setAdapter(adapter);
+        adapter = new ExpandableListAdapter(this, generations, genList);
+        expList.setAdapter(adapter);
     }
 
     @Override

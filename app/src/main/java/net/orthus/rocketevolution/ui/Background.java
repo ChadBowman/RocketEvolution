@@ -22,18 +22,19 @@ public class Background extends Graphic{
     private float x, y;
     private Vector velocity;
     private long previous;
+    private int width, height;
 
     //===== CONSTRUCTOR
-    public Background(Bitmap image){
+    public Background(Bitmap image, int width, int height){
 
-        super.setScale(image.getWidth() / Launchpad.WIDTH);
+        super.setScale(image.getWidth() / width);
 
         this.image = Bitmap.createScaledBitmap(image,
                 (int) (image.getWidth() * getScale()),
                 (int) (image.getHeight() * getScale()), true);
 
         x = 0;
-        y = -image.getHeight() + Launchpad.HEIGHT;
+        y = -image.getHeight() + height;
         velocity = new Vector();
         previous = System.nanoTime();
     }
@@ -42,7 +43,10 @@ public class Background extends Graphic{
         float s = (float) Utility.secondsElapsed(previous, System.nanoTime());
         add((float) velocity.getX() * s, (float) velocity.getY() * s);
 
-        y = (y < -image.getHeight() + Launchpad.HEIGHT)? -image.getHeight() + Launchpad.HEIGHT : y;
+        if(y < -image.getHeight() + height)
+            y = -image.getHeight() + height;
+
+        //Utility.p("X:%f Y%f", x, y);
 
         previous = System.nanoTime();
     }
@@ -69,7 +73,7 @@ public class Background extends Graphic{
 
     public void reset(){
         x = 0;
-        y = -image.getHeight() + Launchpad.HEIGHT;
+        y = -image.getHeight() + height;
     }
 
     public void setVelocity(Vector v){ velocity = v; }

@@ -1,5 +1,7 @@
 package net.orthus.rocketevolution.simulation;
 
+import android.provider.Contacts;
+
 import net.orthus.rocketevolution.environment.Kinematic;
 import net.orthus.rocketevolution.math.Vector;
 import net.orthus.rocketevolution.planets.Earth;
@@ -70,7 +72,7 @@ public class Simulator {
             pos = k.getPosition().newMagnitude(k.getPosition().getMagnitude() - Earth.RADIUS);
 
             // add frame to list
-            history.add(new Frame(pos, k.getVelocity(), k.getRotPos(), fuelProportion));
+            history.add(new Frame(pos, k.getVelocity(), k.getAcceleration(), k.getRotPos(), fuelProportion));
 
             // TAKE A STEP THROUGH SYSTEM
             // use previous position/velocity
@@ -93,7 +95,7 @@ public class Simulator {
             k.setPosition(k.getPosition().add(k.getVelocity().multiply(dt)));
 
             /*  Utility.p("Torque: %f", step.second);
-            k.setRotAcc(step.second); // TODO: 18-Mar-16 add aerodynamic "inertia"
+            k.setRotAcc(step.second); // TODO: 18-Mar-16 add aerodynamic forces
             k.setRotVel(k.getRotVel() + (k.getRotAcc() * dt));
             k.setRotPos(k.getRotPos() + (k.getRotVel() * dt));*/
 
@@ -102,8 +104,8 @@ public class Simulator {
 
             // check for crash
             if(k.getPosition().getMagnitude() < Earth.RADIUS * 0.95) {
-                Utility.p("RUD @ %.2fs", time);
-                rud = true;
+                //Utility.p("RUD @ %.2fs", time);
+                //rud = true;
             }
 
             // maximum values

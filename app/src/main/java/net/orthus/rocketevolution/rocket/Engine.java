@@ -7,6 +7,7 @@ import android.graphics.Path;
 
 import net.orthus.rocketevolution.evolution.Chromosome;
 import net.orthus.rocketevolution.planets.Earth;
+import net.orthus.rocketevolution.ui.Animation;
 import net.orthus.rocketevolution.ui.Bounds;
 import net.orthus.rocketevolution.ui.Graphic;
 import net.orthus.rocketevolution.environment.Physics;
@@ -28,18 +29,20 @@ public class Engine extends Graphic {
 
     //=== CONSTANTS
     public static final int MIN_THROAT_RADIUS = 50;
-    public static final int MAX_THROAT_RADIUS = 1000;
+    public static final int MAX_THROAT_RADIUS = 200;
+    public static final double MERLIN_ID_SL_THRUST = 756e3;
 
     // the radius of the throat exit arc is this factor times the throat radius
     private static final double THROAT_EXIT_FACTOR = 0.382;
     private static final double EXPANSION_FACTOR = 0.75;
-    private static final int MAX_LENGTH_FACTOR = 10;
+    private static final int MAX_LENGTH_FACTOR = 5; //10;
 
     //=== INSTANCE VARIABLES
 
     private Chromosome chromosome;
     private Vector fromCOM;     // distance/angle from center of mass
     private VectorGroup vectorRepresentation;
+    private Animation exhaust;
 
     private double length,
             exitRadius,  // exhaust radius in mm
@@ -87,7 +90,7 @@ public class Engine extends Graphic {
 
         // Set Same Paint for all Engines
         Paint paint = new Paint();
-        paint.setColor(Color.BLACK);
+        paint.setColor(Color.rgb(57, 57, 57));
         paint.setStyle(Paint.Style.FILL);
         setPaint(paint);
 
@@ -243,6 +246,7 @@ public class Engine extends Graphic {
 
     //=== PUBLIC METHODS
 
+
     /**
      * Clones current instance
      * @return a new instance of Engine from this.
@@ -264,6 +268,9 @@ public class Engine extends Graphic {
 
         gimbal = (float) (Math.PI / 2) + gimbal;
         double force = thrust(throttle * massFlowRate, exitVelocity, exitPressure, exitArea, pa);
+
+        // TODO: 13-Apr-16 TEMP
+        force *= 3;
 
         return new Vector(force, gimbal);
     }
@@ -312,6 +319,7 @@ public class Engine extends Graphic {
     @Override
     public void draw(Canvas canvas) {
         canvas.drawPath(path(getRotation()), getPaint());
+        //exhaust.draw(canvas); TODO fix
     }
 
     @Override
@@ -323,6 +331,10 @@ public class Engine extends Graphic {
         // use smallest
         float scale = (x < y)? x : y;
         super.setScale(scale);
+
+        // set the bounds to the exhaust animation
+        exhaust.setScale(scale);
+        exhaust.setBounds(new Bounds(bounds.getLeft(), 0, bounds.getBottom(), 0));
     }
 
     //===== STATIC METHODS
@@ -354,6 +366,7 @@ public class Engine extends Graphic {
 
     //=== ACCESSORS
 
+    public void setExhaust(Animation a){ exhaust = a; }
     /**
      * Replaces the reference from the Rocket's center of mass Vector
      * @param v Vector of Engine placement from Rocket's center of mass.

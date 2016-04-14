@@ -35,27 +35,10 @@ public class Rocket implements Serializable, Kinetic, Comparable<Rocket>{
     private Fitness fitness;
     private UUID id;
 
+    //===== CONSTRUCTORS
     public Rocket(Chromosome chromosome){
         fuselage = new Fuselage(chromosome);
         id = UUID.randomUUID();
-    }
-
-    public boolean isViable(){
-
-        float[] g = new float[fuselage.engineCount()];
-        double[] t = new double[fuselage.engineCount()];
-        for(int i=0; i < g.length; i++) {
-            g[i] = 0f;
-            t[i] = 0.0;
-        }
-
-        Vector a = fuselage.netThrust(Earth.atmosphericPressure(Earth.RADIUS), t, g)
-                .multiply(1 / fuselage.mass()).add(new Vector(0, -9.81));
-
-        if(a.getMagnitude() < 0 || a.getMagnitude() > 150)
-            return false;
-
-        return true;
     }
 
     public Rocket(){
@@ -63,6 +46,16 @@ public class Rocket implements Serializable, Kinetic, Comparable<Rocket>{
         this.fuselage = new Fuselage(chromosome); // base unit in CMs
         this.kinematics = new Kinematic();
         id = UUID.randomUUID();
+    }
+
+    //===== PUBLIC METHODS
+    public boolean isViable(){
+
+        Vector a = fuselage.netThrust(Earth.atmosphericPressure(Earth.RADIUS), null, null)
+                .multiply(1 / fuselage.mass()).add(new Vector(0, -9.81));
+
+        return a.getAngle() < Math.PI && a.getMagnitude() < 100;
+
     }
 
     //===== STATIC METHODS

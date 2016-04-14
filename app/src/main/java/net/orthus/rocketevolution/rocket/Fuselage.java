@@ -1,10 +1,14 @@
 package net.orthus.rocketevolution.rocket;
 
+import android.content.Intent;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 
 import net.orthus.rocketevolution.evolution.Chromosome;
+import net.orthus.rocketevolution.planets.Earth;
+import net.orthus.rocketevolution.ui.Animation;
 import net.orthus.rocketevolution.ui.Bounds;
 import net.orthus.rocketevolution.ui.Graphic;
 import net.orthus.rocketevolution.utility.*;
@@ -29,7 +33,7 @@ public class Fuselage extends Graphic {
     //=== CONSTANTS
 
     //TODO units?
-    public static final int MAX_FUSELAGE_VECTOR_LENGTH = 500;
+    public static final int MAX_FUSELAGE_VECTOR_LENGTH = 300;
     private static final int MAX_NUMBER_OF_FUSELAGE_VECTORS = 10;
 
     // average density of all support systems
@@ -112,6 +116,8 @@ public class Fuselage extends Graphic {
 
         // Graphic elements
         setPaint(new Paint());
+        getPaint().setStyle(Paint.Style.FILL);
+        getPaint().setColor(chromosome.fuselageColor());
         path = new Path();
 
     } // end Fuselage()
@@ -301,16 +307,34 @@ public class Fuselage extends Graphic {
 
     //=== PUBLIC METHODS
 
+
     public Vector netThrust(double pa, double[] throttle, float[] gimbal){
 
         Engine[] engines = enginesInOrder();
         Vector total = new Vector();
+
+        if(throttle == null){
+            throttle = new double[engines.length];
+            for(int i=0; i < engines.length; i++)
+                throttle[i] = 1;
+        }
+
+        if(gimbal == null){
+            gimbal = new float[engines.length];
+            for(int i=0; i < engines.length; i++)
+                gimbal[i] = 0;
+        }
 
         for(int i=0; i < engines.length; i++)
             total.add_(engines[i].thrust(pa, throttle[i], gimbal[i]));
 
 
         return total;
+    }
+
+    public Vector netAcc(double pa, double[] throttle, float[] gimbal){
+
+        return netThrust(pa, throttle, gimbal).multiply(1.0 / currentMass());
     }
 
     /**
@@ -344,12 +368,24 @@ public class Fuselage extends Graphic {
 
     //=== PUBLIC METHODS
 
+    public double merlin1DRatio(){
+        double t = engines.values().get(0)
+                .thrust(Earth.atmosphericPressure(Earth.RADIUS), 1, 0).getMagnitude();
+        return t / Engine.MERLIN_ID_SL_THRUST;
+    }
+
     public double mass(){ return currentMass(); }
 
     public void setEnginePaint(Paint paint){
 
         for(Engine e : engines.values())
             e.setPaint(paint);
+    }
+
+    public void setEngineExhaust(Animation animation){
+
+        for(Engine e : engines.values())
+            e.setExhaust(animation);
     }
 
     public Path path(float theta){
@@ -465,6 +501,20 @@ public class Fuselage extends Graphic {
             list.add(Utility.rand(1, MAX_FUSELAGE_VECTOR_LENGTH));
 
         return list;
+    }
+
+    public static Tuple<Integer> randomColor(){
+
+        Tuple<Integer> color = new Tuple<>();
+
+        switch(Utility.rand(0, 3)){
+            case 0: color.add(Color.WHITE); break;
+            case 1: color.add(Color.GRAY); break;
+            case 2: color.add(Orthus.ORTHUS_BRONZE); break;
+            case 3: color.add(Orthus.ORTHUS_SILVER); break;
+        }
+
+        return color;
     }
 
     //===== ACCESSORS

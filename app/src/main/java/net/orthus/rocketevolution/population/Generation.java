@@ -33,6 +33,14 @@ public class Generation {
     }
 
     //===== PUBLIC METHODS
+    public ArrayList<String> idList(){
+        ArrayList<String> list = new ArrayList<>();
+        for(UUID id : generation.keys())
+            list.add(id.toString());
+
+        return list;
+    }
+
     public void runSims(){
 
         for(Rocket rocket : generation.values()) {
@@ -54,15 +62,6 @@ public class Generation {
         return true;
     }
 
-    public ArrayList<String> getIDs(){
-
-        ArrayList<String> ids = new ArrayList<>();
-
-        for(UUID id : generation.keys())
-            ids.add(id.toString());
-
-        return ids;
-    }
 
     //===== PRIVATE METHODS
     private Hash<UUID, Rocket> generate(int number){
@@ -72,10 +71,14 @@ public class Generation {
         int i = 0;
         while(gen.entries() != number){
             Rocket r = new Rocket();
-            if(r.isViable())
+            if(r.isViable()) {
                 gen.add(r.getId(), r);
-            Utility.p("Tried %d", ++i);
+                Utility.p("Merlin %f", r.getFuselage().merlin1DRatio());
+            }
+            i++;
         }
+
+        Utility.p("It took an average of %.0f tries to get a useful Rocket.", i / 9f);
 
         return gen;
     }

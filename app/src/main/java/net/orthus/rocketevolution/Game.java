@@ -2,6 +2,7 @@ package net.orthus.rocketevolution;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -41,8 +42,11 @@ public class Game extends Activity {
         if(player == null)
             player = new Player();
 
+        DisplayMetrics dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+
         // Start launchpad up
-        setContentView(new Launchpad(this, player));
+        setContentView(new Launchpad(this, player, dm.widthPixels, dm.heightPixels));
     }
 
     @Override

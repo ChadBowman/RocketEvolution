@@ -18,14 +18,15 @@ public class Label extends Graphic {
                     image;
 
     private boolean enabled,
-                    maintainRatio,
-                    centered;
+                    maintainRatio;
+
+    private float textX, textY;
 
     //===== CONSTRUCTORS
     public Label(){
         enabled = true;
         maintainRatio = false;
-        centered = true;
+        setPaint(new Paint());
     }
 
     public Label(String text, Bitmap bitmap){
@@ -34,7 +35,7 @@ public class Label extends Graphic {
         image = bitmap;
         enabled = true;
         maintainRatio = false;
-        centered = true;
+        setPaint(new Paint());
     }
 
     //===== PUBLIC METHODS
@@ -44,6 +45,9 @@ public class Label extends Graphic {
     }
 
     public void setFont(int color, float size, Typeface typeface){
+
+        if(typeface == null)
+            typeface = Typeface.DEFAULT;
 
         Paint p = new Paint();
         p.setColor(color);
@@ -73,6 +77,11 @@ public class Label extends Graphic {
         }
     }
 
+    public void setTextLocation(float x, float y){
+        textX = x;
+        textY = y;
+    }
+
     //===== OVERRIDES
 
     @Override
@@ -89,14 +98,10 @@ public class Label extends Graphic {
             if(image != null)
                 canvas.drawBitmap(image, x, y, getPaint());
 
-            if(text != null) {
-                if(centered) {
-                    y += (getBounds().height() / 2) + (getPaint().getTextSize() / 2);
-                    x += getBounds().width() - (getPaint().getTextSize() * text.length() * 0.95);
-                }
+            if(text != null)
+                canvas.drawText(text, x + textX, y + textY, getPaint());
 
-                canvas.drawText(text, x, y, getPaint());
-            }
+
         }
     }
 
