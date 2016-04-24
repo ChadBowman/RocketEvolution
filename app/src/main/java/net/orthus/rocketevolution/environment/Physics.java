@@ -1,5 +1,7 @@
 package net.orthus.rocketevolution.environment;
 
+import android.view.VelocityTracker;
+
 import net.orthus.rocketevolution.math.Vector;
 
 /**
@@ -25,6 +27,16 @@ public class Physics {
 
         // return vector with new magnitude in the direction of m2
         return distance.newMagnitude(mag);
+    }
+
+    public static Vector gravitationalAcceleration(double mass, Vector distance){
+        return distance.newMagnitude(G * mass / Math.pow(distance.getMagnitude(), 2));
+    }
+
+    public static Vector drag(Vector objectVelocity, double density, double area, double coefficient){
+        return objectVelocity.newMagnitude(
+                0.5 * density * Math.pow(objectVelocity.getMagnitude(), 2) * area * coefficient)
+                .negate(); // flip the force since it opposes the object
     }
 
 

@@ -78,7 +78,6 @@ public class Animation extends Graphic{
 
             if(repeat) {
                 currentFrame = (currentFrame + 1) % sprites.length;
-                Utility.p("CF: %d", currentFrame);
 
             } else {
                 // non-repeating animation

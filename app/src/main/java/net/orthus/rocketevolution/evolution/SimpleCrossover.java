@@ -37,6 +37,7 @@ public class SimpleCrossover implements Genetic{
     public SimpleCrossover(Hash<UUID, Rocket> generation) {
 
         this.generation = generation.values();
+
         mutationRate = 0.01f; // 1% chance of any value changing randomly
         crossoverRate = 0.25f;
     }
@@ -47,9 +48,11 @@ public class SimpleCrossover implements Genetic{
 
         Tuple<Rocket> theBest = new Tuple<>();
         Collections.sort(this.generation);
-        // since generation was sorted in the constructor, we just need the bottom half
-        for(int i = generation.size() - 1; i < generation.size() / 2; i--)
+
+        for(int i = generation.size() - 1; i >= generation.size() / 2; i--)
             theBest.add(generation.get(i));
+        Utility.p("The best: %d", theBest.size());
+
 
         return theBest;
     }
@@ -127,10 +130,13 @@ public class SimpleCrossover implements Genetic{
         Tuple<Integer> childB = new Tuple<>();
 
         for(int i=0; i < a.size(); i++)
-            if(r.nextFloat() < crossoverRate)
+            if(r.nextFloat() < crossoverRate) {
                 childA.add(b.get(i));
-            else
+                childB.add(a.get(i));
+            }else {
                 childA.add(a.get(i));
+                childB.add(b.get(i));
+            }
 
         return new Pair<>(childA, childB);
     }
@@ -199,36 +205,50 @@ public class SimpleCrossover implements Genetic{
         if(idx == masterIndex)
             idx = (idx + 1) % group.size();
 
+        Utility.p("Breeding %d wih %d", masterIndex, idx);
+
         Chromosome a = group.get(masterIndex).getChromosome();
         Chromosome b = group.get(idx).getChromosome();
 
-        Chromosome child1 = new Chromosome();
-        Chromosome child2 = new Chromosome();
+        Chromosome child1 = new Chromosome().randomize();
+        Chromosome child2 = new Chromosome().randomize();
+        Utility.p("C1: %s", a.toString());
 
         // fuselage
         Pair<Tuple<Integer>, Tuple<Integer>> f = crossFuselage(a.getFuselage(), b.getFuselage());
-        child1.setFuselage(mutateFuselage(f.first));
-        child2.setFuselage(mutateFuselage(f.second));
+        child1.setFuselage(f.first); //mutateFuselage(f.first));
+        child2.setFuselage(f.second); //mutateFuselage(f.second));
+        Utility.p("Fuselage: %d, %d", f.first.size(), f.second.size());
 
         // engine
         f = cross(a.getEngine(), b.getEngine());
-        child1.setEngine(mutateEngine(f.first));
-        child2.setEngine(mutateEngine(f.second));
+        child1.setEngine(f.first); //mutateEngine(f.first));
+        child2.setEngine(f.second); //mutateEngine(f.second));
+        Utility.p("Engine: %d, %d", f.first.size(), f.second.size());
+
 
         // fuel
         f = cross(a.getFuel(), b.getFuel());
-        child1.setFuel(mutateFuel(f.first));
-        child2.setFuel(mutateFuel(f.second));
+        child1.setFuel(f.first); //mutateFuel(f.first));
+        child2.setFuel(f.second); //mutateFuel(f.second));
+        Utility.p("Fuel: %d, %d", f.first.get(0), f.second.get(0));
 
         // mass distribution
         f = cross(a.getMassDistribution(), b.getMassDistribution());
-        child1.setMassDistribution(mutateMassDistribution(f.first));
-        child2.setMassDistribution(mutateMassDistribution(f.second));
+        child1.setMassDistribution(f.first); //mutateMassDistribution(f.first));
+        child2.setMassDistribution(f.second); //mutateMassDistribution(f.second));
+        Utility.p("Mass Dist: %d, %d", f.first.size(), f.second.size());
+
+        f = cross(a.getColor(), b.getColor());
+        child1.setColor(f.first);
+        child2.setColor(f.second);
 
         // material
-        f = cross(a.getMaterial(), b.getMaterial());
-        child1.setMaterial(mutateMaterial(f.first));
-        child2.setMaterial(mutateMaterial(f.second));
+        //f = cross(a.getMaterial(), b.getMaterial());
+        //child1.setMaterial(mutateMaterial(f.first));
+        //child2.setMaterial(mutateMaterial(f.second));
+
+        Utility.p("Children: %s, %s", child1.toString(), child2.toString());
 
         // add new children to population
         children.add(new Rocket(child1));

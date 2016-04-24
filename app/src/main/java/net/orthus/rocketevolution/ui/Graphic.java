@@ -14,6 +14,10 @@ public abstract class Graphic {
     private float scale;
     private float rotation;
 
+    public Graphic(){
+        bounds = new Bounds();
+        paint = new Paint();
+    }
 
     //===== ABSTRACT METHODS
     public abstract void update();

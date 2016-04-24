@@ -1,6 +1,7 @@
 package net.orthus.rocketevolution.simulation;
 
 import net.orthus.rocketevolution.math.Vector;
+import net.orthus.rocketevolution.utility.Utility;
 
 import java.util.Locale;
 
@@ -25,9 +26,12 @@ public class Frame {
 
     //===== PUBLIC METHODS
     public String toString(){
-        return String.format(Locale.US, "X:%s V:%s A:%s %.3f %.0f%%",
-                position.toString(), velocity.toString(), acceleration.toString(),
-                direction, fuel * 100);
+        return String.format(Locale.US, "X:%s V:%s A:%s %.0f%s %.0f%%",
+                position.toString(),
+                velocity.toString(),
+                acceleration.toString(),
+                Utility.radianToDegree(direction), Utility.DEGREE,
+                fuel * 100);
     }
 
     //===== ACCESSORS

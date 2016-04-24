@@ -13,7 +13,6 @@ public class Kinematic {
                     acceleration;
 
     private float rotPos;
-
     private double rotVel, rotAcc;
 
     public Kinematic(){
@@ -31,12 +30,15 @@ public class Kinematic {
     public Vector getPosition(){ return position; }
     public Vector getVelocity(){ return velocity; }
     public Vector getAcceleration(){ return acceleration; }
+
     public void setPosition(Vector v){ position = v; }
     public void setVelocity(Vector v){ velocity = v; }
     public void setAcceleration(Vector v){ acceleration = v; }
+
     public float getRotPos(){ return rotPos; }
     public double getRotVel(){ return rotVel; }
     public double getRotAcc(){ return rotAcc; }
+
     public void setRotPos(float x){ rotPos = Vector.normalizeAngle(x); }
     public void setRotPos(double x){ rotPos = Vector.normalizeAngle((float) x); }
     public void setRotVel(double x){ rotVel = x; }

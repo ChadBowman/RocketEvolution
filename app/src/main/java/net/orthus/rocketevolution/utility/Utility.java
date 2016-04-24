@@ -9,6 +9,7 @@ import java.util.Random;
 public class Utility<O> {
 
     public static final int MILLION = 1000000;
+    public static final String DEGREE = "\u00b0";
 
     public static Random rand = new Random();
 
@@ -108,6 +109,10 @@ public class Utility<O> {
             return true;
 
         return false;
+    }
+
+    public static double radianToDegree(double radians){
+        return radians * 180 / Math.PI;
     }
 
     public static void p(String fmt, Object... args){

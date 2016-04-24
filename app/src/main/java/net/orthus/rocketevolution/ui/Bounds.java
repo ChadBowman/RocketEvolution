@@ -8,7 +8,11 @@ public class Bounds {
     //===== INSTANCE VARIABLES
     private float left, right, top, bottom;
 
-    //===== CONSTRUCTOR
+    //===== CONSTRUCTORS
+    public Bounds(){
+        setBounds(0, 0, 0, 0);
+    }
+
     public Bounds(float left, float right, float top, float bottom) {
 
         setBounds(left, right, top, bottom);

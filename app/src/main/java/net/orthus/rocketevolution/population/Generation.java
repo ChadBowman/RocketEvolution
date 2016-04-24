@@ -3,6 +3,7 @@ package net.orthus.rocketevolution.population;
 import net.orthus.rocketevolution.evolution.Chromosome;
 import net.orthus.rocketevolution.evolution.SimpleCrossover;
 import net.orthus.rocketevolution.rocket.Rocket;
+import net.orthus.rocketevolution.simulation.Fitnesses.Altitude;
 import net.orthus.rocketevolution.simulation.Simulation;
 import net.orthus.rocketevolution.simulation.Simulator;
 import net.orthus.rocketevolution.utility.Hash;
@@ -24,8 +25,8 @@ public class Generation {
         generation = generate(number);
     }
 
-    public Generation(Hash<UUID, Rocket> generation){
-        this.generation = generation;
+    public Generation(Hash<UUID, Rocket> previous){
+        // change this back the way it was
     }
 
     public Generation(Generation previous){
@@ -43,10 +44,11 @@ public class Generation {
 
     public void runSims(){
 
-        for(Rocket rocket : generation.values()) {
+        ArrayList<Rocket> r = generation.values();
+        for(int i=0; i < r.size(); i++){
             //new Thread(){
             //   public void run(){
-            rocket.setSimulation(new Simulator(rocket).run(5, 120));
+            r.get(i).setSimulation(new Simulator(r.get(i)).run(2, 120));
             //   }
             // }.start();
         }
@@ -73,12 +75,12 @@ public class Generation {
             Rocket r = new Rocket();
             if(r.isViable()) {
                 gen.add(r.getId(), r);
-                Utility.p("Merlin %f", r.getFuselage().merlin1DRatio());
+                //Utility.p("Merlin %f", r.getFuselage().merlin1DRatio());
             }
             i++;
         }
 
-        Utility.p("It took an average of %.0f tries to get a useful Rocket.", i / 9f);
+        Utility.p("It took an average of %.0f tries to get a useful Rocket.", i / (float) number);
 
         return gen;
     }
@@ -87,13 +89,13 @@ public class Generation {
     public Hash<UUID, Rocket> getGeneration(){ return generation; }
 
     //===== STATIC METHODS
-    public static Generation loadGeneration(ArrayList<String> ids, File dir){
+/*    public static Generation loadGeneration(ArrayList<String> ids, File dir){
 
         Hash<UUID, Rocket> gen = new Hash<>();
         for(String id : ids)
             gen.add(UUID.fromString(id), Rocket.load(new File(dir, id + ".roc")));
 
         return new Generation(gen);
-    }
+    }*/
 
 } // Generation

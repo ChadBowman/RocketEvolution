@@ -28,6 +28,8 @@ public class Rocket implements Serializable, Kinetic, Comparable<Rocket>{
     public static final double MIN_INERT_PROPORTION = 0.1; //TODO check
     public static final double MAX_INERT_PROPORTION = 0.4; //TODO check if this is realistic
 
+    public static final int FALCON9R_MASS = 505846;
+
     private Chromosome chromosome;
     private Fuselage fuselage;
     private Kinematic kinematics;
@@ -39,6 +41,7 @@ public class Rocket implements Serializable, Kinetic, Comparable<Rocket>{
     public Rocket(Chromosome chromosome){
         fuselage = new Fuselage(chromosome);
         id = UUID.randomUUID();
+        this.kinematics = new Kinematic();
     }
 
     public Rocket(){
@@ -52,8 +55,9 @@ public class Rocket implements Serializable, Kinetic, Comparable<Rocket>{
     public boolean isViable(){
 
         Vector a = fuselage.netThrust(Earth.atmosphericPressure(Earth.RADIUS), null, null)
-                .multiply(1 / fuselage.mass()).add(new Vector(0, -9.81));
+                .multiply(1 / fuselage.mass()).add(Earth.seaLevelAcc());
 
+        //Utility.p("Viable with " + a.toString());
         return a.getAngle() < Math.PI && a.getMagnitude() < 100;
 
     }
@@ -124,6 +128,6 @@ public class Rocket implements Serializable, Kinetic, Comparable<Rocket>{
 
     @Override
     public int compareTo(Rocket another) {
-        return fitness.compareTo(another.getFitness());
+        return simulation.fitness.compareTo(another.getSimulation().fitness);
     }
 } // end Rocket

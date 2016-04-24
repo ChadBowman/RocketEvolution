@@ -14,6 +14,7 @@ public class Simulation {
     private ArrayList<Frame> history;
     private int interval;
     private boolean rud;
+    public Fitness fitness;
 
     //===== CONSTRUCTOR
     public Simulation(ArrayList<Frame> history, int interval, boolean rud){

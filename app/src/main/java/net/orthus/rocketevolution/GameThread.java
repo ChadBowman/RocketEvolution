@@ -4,13 +4,14 @@ import android.graphics.Canvas;
 import android.view.SurfaceHolder;
 
 import net.orthus.rocketevolution.ui.Launchpad;
+import net.orthus.rocketevolution.utility.Utility;
 
 /**
  * Created by Chad on 7/23/2015.
  */
 public class GameThread extends Thread {
 
-    private int FPS = 10;
+    private int FPS = 20;
     private float averageFPS;
     private SurfaceHolder surfaceHolder;
     private Launchpad launchpad;
@@ -25,6 +26,7 @@ public class GameThread extends Thread {
     }
 
     public void setRunning(boolean b){ running = b; }
+    public float getAverageFPS(){ return averageFPS; }
 
     @Override
     public void run(){
@@ -46,6 +48,7 @@ public class GameThread extends Thread {
                 synchronized (surfaceHolder){
                     this.launchpad.update();
                     this.launchpad.draw(canvas);
+                    //Utility.p("FPS: %f", averageFPS);
                 }
             }catch(Exception e){}
 

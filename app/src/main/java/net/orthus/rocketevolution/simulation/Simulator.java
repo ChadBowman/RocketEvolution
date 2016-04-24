@@ -3,10 +3,12 @@ package net.orthus.rocketevolution.simulation;
 import android.provider.Contacts;
 
 import net.orthus.rocketevolution.environment.Kinematic;
+import net.orthus.rocketevolution.environment.Physics;
 import net.orthus.rocketevolution.math.Vector;
 import net.orthus.rocketevolution.planets.Earth;
 import net.orthus.rocketevolution.rocket.Guidance;
 import net.orthus.rocketevolution.rocket.Rocket;
+import net.orthus.rocketevolution.simulation.Fitnesses.Altitude;
 import net.orthus.rocketevolution.utility.Triple;
 import net.orthus.rocketevolution.utility.Utility;
 
@@ -18,7 +20,7 @@ import java.util.ArrayList;
 public class Simulator {
 
     private Rocket rocket;
-
+    public final Vector GRAV = new Vector(0, -9.81);
     public Simulator(Rocket rocket){
         this.rocket = rocket;
     }
@@ -41,25 +43,26 @@ public class Simulator {
         // INITIAL VALUES T = 0
         // set initial position to Earth Radius
         k.setPosition(new Vector(0, Earth.RADIUS));
+        k.setVelocity(new Vector());
+        //k.setRotPos(Math.PI / 2);
 
-        // initial step
+        // initial values
         Triple<Vector, Double, Double> step = rocket.getFuselage().step(
                 Earth.pressure(k.getPosition()),
                 0,
                 guide.throttle(guide.noThrottle(), time),
                 guide.gimbal(guide.noGimbal(), time));
 
-        k.setAcceleration(step.first.add(Earth.gravity(rocket.getFuselage().mass(), k.getPosition())));
-
+        k.setAcceleration(step.first);
         k.setRotAcc(step.second);
         double fuelProportion = step.third;
-
+        // no velocity at T=0
 
         // list to stack history
         ArrayList<Frame> history = new ArrayList<>();
 
         Vector gravity, drag, pos, acc;
-        double pressure;
+        double pressure, density;
 
         Vector maxPos = new Vector();
         Vector maxVel = new Vector();
@@ -68,17 +71,29 @@ public class Simulator {
         // update system until finished or RUD
         while( time < duration && !rud ){
 
+            //Utility.p("Rot:%.0f%s", Utility.radianToDegree(k.getRotPos()), Utility.DEGREE);
             // subtract earth radius for history
             pos = k.getPosition().newMagnitude(k.getPosition().getMagnitude() - Earth.RADIUS);
-
             // add frame to list
-            history.add(new Frame(pos, k.getVelocity(), k.getAcceleration(), k.getRotPos(), fuelProportion));
+            Frame f = new Frame(
+                    pos,
+                    k.getVelocity(),
+                    k.getAcceleration(),
+                    k.getRotPos(),
+                    fuelProportion);
+            //Utility.p("%s|%s", rocket.getId().toString(), f.toString());
+            history.add(f);
 
             // TAKE A STEP THROUGH SYSTEM
             // use previous position/velocity
             pressure = Earth.pressure(k.getPosition());
-            gravity = Earth.gravity(rocket.getFuselage().mass(), k.getPosition());
-            drag = new Vector(); // TODO: 13-Mar-16 implement
+            density = Earth.density(k.getPosition());
+            gravity = Earth.gravitationalAcceleration(k.getPosition());
+            drag = Physics.drag(
+                    k.getVelocity(),
+                    density,
+                    rocket.getFuselage().getWidth() / 1000.0, // TODO: 24-Apr-16 figure out the units for this somewhere else
+                    rocket.getFuselage().getDragCoefficient());
 
             step = rocket.getFuselage().step(
                     pressure,
@@ -89,23 +104,29 @@ public class Simulator {
             fuelProportion = step.third;
 
             // Set Kinematics
-            //acc = new Vector(step.first.getMagnitude(), 0f);//k.getRotPos());
-            k.setAcceleration(step.first.add(drag).add(gravity));
-            k.setVelocity(k.getVelocity().add(k.getAcceleration().multiply(dt)));
-            k.setPosition(k.getPosition().add(k.getVelocity().multiply(dt)));
+            k.setAcceleration(step.first.add(gravity).add(drag)); //newAngle(k.getRotPos()).add(GRAV));
+            //k.setVelocity(k.getVelocity().add(k.getAcceleration().multiply(dt)));
+            k.getVelocity().add_(k.getAcceleration().multiply(dt));
+            k.getPosition().add_(k.getVelocity().multiply(dt));
 
-            /*  Utility.p("Torque: %f", step.second);
+/*            Utility.p("[%.2f] V:%s A:%s, R:%.2f%s",
+                    time,
+                    k.getVelocity().toString(),
+                    k.getAcceleration().toString(),
+                    k.getRotPos(),
+                    Utility.DEGREE);*/
+
             k.setRotAcc(step.second); // TODO: 18-Mar-16 add aerodynamic forces
             k.setRotVel(k.getRotVel() + (k.getRotAcc() * dt));
-            k.setRotPos(k.getRotPos() + (k.getRotVel() * dt));*/
+            k.setRotPos(k.getRotPos() + (k.getRotVel() * dt));
 
             // update time
             time += dt;
 
             // check for crash
-            if(k.getPosition().getMagnitude() < Earth.RADIUS * 0.95) {
-                //Utility.p("RUD @ %.2fs", time);
-                //rud = true;
+            if(k.getPosition().getMagnitude() < Earth.RADIUS) {
+                Utility.p("RUD @ %.2fs", time);
+                rud = true;
             }
 
             // maximum values
@@ -121,6 +142,7 @@ public class Simulator {
         } // end while
 
         Simulation sim = new Simulation(history, interval, rud);
+        sim.fitness = new Altitude(maxPos.getMagnitude());
 
         return sim;
 

@@ -1,5 +1,7 @@
 package net.orthus.rocketevolution.math;
 
+import android.support.annotation.NonNull;
+
 /**
  * Created by Chad on 7/23/2015.
  *
@@ -9,7 +11,8 @@ public class Vector implements Comparable<Vector>{
 
     //=== CONSTANTS
     // Tolerance for double comparison
-    final double DELTA = 0.0000001;
+    private final double DELTA = 0.0000001;
+    public static final Vector ZERO = new Vector();
 
     //=== INSTANCE VARIABLES
     private double x, y;
@@ -19,7 +22,10 @@ public class Vector implements Comparable<Vector>{
     /**
      * Creates the zero-vector;
      */
-    public Vector(){}
+    public Vector(){
+        x = 0;
+        y = 0;
+    }
 
     /**
      * Takes cartesian inputs.
@@ -123,7 +129,7 @@ public class Vector implements Comparable<Vector>{
     }
 
     public Vector newAngle(float theta){
-        return new Vector(getMagnitude() + .5, theta);
+        return new Vector(getMagnitude(), theta);
     }
 
     public void newAngle_(float theta){
@@ -217,14 +223,17 @@ public class Vector implements Comparable<Vector>{
     }
 
     //===== ACCESSORS
-
     public double getX(){ return x; }
     public double getY(){ return y; }
     public void setX(double x){ this.x = x; }
     public void setY(double y){ this.y = y; }
+    public void set(double x, double y){
+        this.x = x;
+        this.y = y;
+    }
 
     @Override
-    public int compareTo(Vector v){
+    public int compareTo(@NonNull Vector v){
 
         if(Math.abs(getMagnitude() - v.getMagnitude()) < DELTA)
             return 0;

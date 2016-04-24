@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.hardware.usb.UsbDevice;
 
 import net.orthus.rocketevolution.evolution.Chromosome;
 import net.orthus.rocketevolution.planets.Earth;
@@ -34,7 +35,7 @@ public class Fuselage extends Graphic {
 
     //TODO units?
     public static final int MAX_FUSELAGE_VECTOR_LENGTH = 300;
-    private static final int MAX_NUMBER_OF_FUSELAGE_VECTORS = 10;
+    private static final int MAX_NUMBER_OF_FUSELAGE_VECTORS = 20;
 
     // average density of all support systems
     private final float densitySupport = 2650f; //TODO set a fixed density for support systems/materials
@@ -56,7 +57,8 @@ public class Fuselage extends Graphic {
                     width,          //TODO UNITS FOR ALL THIS SHIT DOCUMENT IT
                     height,
                     volume,
-                    surfaceArea;
+                    surfaceArea,
+                    dragCoefficient;
 
     private int relativeCenter, trueCenter;
 
@@ -67,17 +69,22 @@ public class Fuselage extends Graphic {
     private Chromosome chromosome;
     private Path path;
 
-
+    public String type = "";
     //=== CONSTRUCTORS
 
     public Fuselage(Chromosome chromosome){
+        // Create graphic objects
+        super();
+        getPaint().setStyle(Paint.Style.FILL);
+        getPaint().setColor(chromosome.fuselageColor());
+        path = new Path();
 
         this.chromosome = chromosome;
         fuel = chromosome.fuel();
         Tuple<Integer> magnitudes = chromosome.getFuselage();
 
         // List which will eventually make up the VectorGroup to return
-        ArrayList<Vector> vectorList = new ArrayList<Vector>();
+        ArrayList<Vector> vectorList = new ArrayList<>();
 
         // spoke is the angle to increment for each Vector so the angle between them is the same
         // minus 1 since two vectors will be vertical
@@ -87,17 +94,31 @@ public class Fuselage extends Graphic {
         float up = (float) Math.PI / 2f;
 
         // generate the vectors which will form the shape
+        // start at top, then work CCW
         for(int i=0; i < magnitudes.size(); i++)
             vectorList.add( new Vector( magnitudes.get(i), up + (spoke * i) ) );
 
+        // get coefficient with this half flipped so mostly working with positive values
+        Aerodynamics a = new Aerodynamics(
+                       new VectorGroup(vectorList).negateX().getVectorList());
+        dragCoefficient = a.dragCoefficient();
+        type = a.type;
+        //dragCoefficient = new Aerodynamics(
+         //       new VectorGroup(vectorList).negateX().getVectorList()).dragCoefficient();
+
+
+        // used for many calculations, rotated to "top" of rocket is pointing right (last index)
+        horizontalHalf = new VectorGroup(vectorList).rotateCW(); //.rotateCCW().negateY();
+        //Utility.p("%s", horizontalHalf.toString());
+
+        // duplicate vectors on the opposite side for full shape
         shape = new VectorGroup(mirrorVectors(vectorList));
 
         // get the array list
-        ArrayList<Vector> vectors = shape.getVectorList();
+        //ArrayList<Vector> vectors = shape.getVectorList();
         // grab the first half, plus vertical vectors
-        ArrayList<Vector> half = new Utility<Vector>().sub(vectors, 0, vectors.size() / 2);
+        //ArrayList<Vector> half = new Utility<Vector>().sub(vectors, 0, vectors.size() / 2);
 
-        horizontalHalf = new VectorGroup(half).rotateCW();
 
         centroid = horizontalHalf.centroid3D();
         width = width();
@@ -105,8 +126,14 @@ public class Fuselage extends Graphic {
         volume = -horizontalHalf.volume() / Launchpad.MILLION;
         surfaceArea = (long) -horizontalHalf.surfaceArea();
 
+        // VectorGroup with COM as center instead of generated center
         centeredAtCOM = shape.reCenter(new Vector(0, centroid));
         engines = spawnEngines(centeredAtCOM);
+
+        // used for drawing new paths when a rotation occurs
+        rotatedLocations = new Vector[centeredAtCOM.numberOfVectors()];
+        for(int i=0; i< rotatedLocations.length; i++)
+            rotatedLocations[i] = new Vector();
 
         double inert = chromosome.inertProportion(),
                 fuel = chromosome.fuelProportion();
@@ -114,15 +141,15 @@ public class Fuselage extends Graphic {
         initialFuelMass = calculateInitialFuelMass(fuel);
         currentFuelMass = initialFuelMass;
 
-        // Graphic elements
-        setPaint(new Paint());
-        getPaint().setStyle(Paint.Style.FILL);
-        getPaint().setColor(chromosome.fuselageColor());
-        path = new Path();
+        // initial rotation is "up":
+        setRotation((float) Math.PI / 2f);
+
 
     } // end Fuselage()
 
     //=== PRIVATE METHODS
+
+
 
     private Hash<Integer, Engine> spawnEngines(VectorGroup fromCOM){
 
@@ -226,16 +253,17 @@ public class Fuselage extends Graphic {
     /**
      * Generates the remaining Vectors so the Fuselage shape is symmetric
      * @param vectors non-symmetric half-shape of body
-     * @return symmetric, complete shape of rocket body
+     * @return symmetric, complete shape of rocket body. The bottom Vector is the last one in the
+     * list and the index flows CCW.
      */
     private ArrayList<Vector> mirrorVectors(ArrayList<Vector> vectors) {
 
         // decrement through vectors, skipping the vertical ones. Start with last one
         // to continue the logical flow around the circle.
-        // Vectors are copied to array first so ArrayList size doesn't change
         ArrayList<Vector> holder = new ArrayList<>();
+
         for (int i = vectors.size() - 2; i > 0; i--)
-            holder.add(new Vector(vectors.get(i).getX() * -1, vectors.get(i).getY()));
+            holder.add(new Vector( -vectors.get(i).getX(), vectors.get(i).getY()));
 
         // add held vectors to permanent list
         for(int i=0; i < holder.size(); i++)
@@ -246,13 +274,14 @@ public class Fuselage extends Graphic {
 
     private double width(){
 
-        ArrayList<Vector> vectors = shape.getVectorList();
+        ArrayList<Vector> vectors = horizontalHalf.getVectorList();
 
         // find the longest x-value
         double value = 0;
-        for(int i=0; i < vectors.size(); i++)
-            value = (vectors.get(i).getX() > value)?
-                    vectors.get(i).getX() : value;
+        for(Vector v: vectors)
+            if(v.getY() > value)
+                value = v.getY();
+
 
         // double ita
         return value * 2;
@@ -366,11 +395,27 @@ public class Fuselage extends Graphic {
         return new Triple<>(acc, angAcc, currentFuelProportion());
     }
 
+    public void setEngineBounds(){
+        int x, y, r, height;
+        for(Integer key : engines.keys()){
+
+            Engine e = engines.get(key);
+
+            x = (int) rotatedLocations[key].getX();
+            y = (int) rotatedLocations[key].getY();
+            r = (int) (e.getWidth() * 100 * getScale() / 2);
+            height = (int) (e.getLength() * 100 * getScale());
+
+            e.setBounds(new Bounds(x-r, x+r, y, y+height));
+        }
+    }
+
     //=== PUBLIC METHODS
 
     public double merlin1DRatio(){
         double t = engines.values().get(0)
                 .thrust(Earth.atmosphericPressure(Earth.RADIUS), 1, 0).getMagnitude();
+
         return t / Engine.MERLIN_ID_SL_THRUST;
     }
 
@@ -413,24 +458,21 @@ public class Fuselage extends Graphic {
         relativeCenter = (int) (xAxis - (scale * centroid));
         trueCenter = xAxis;
 
-        //Array to save locations
-        rotatedLocations = new Vector[vectors.size()];
-
         // reset path
         path.reset();
 
         // start at top
-        int x = (int) (yAxis + (vectors.get(0).getX() * scale));
-        int y = (int) (xAxis - (vectors.get(0).getY() * scale));
+        float x = (float)(yAxis + (vectors.get(0).getX() * scale));
+        float y = (float) (xAxis - (vectors.get(0).getY() * scale));
         path.moveTo(x, y);
-        rotatedLocations[0] = new Vector((double) x, (double) y);
+        rotatedLocations[0].set(x, y);
 
         // move through list
         for(int i=1; i< vectors.size(); i++){
-            x = (int) (yAxis + (vectors.get(i).getX() * scale));
-            y = (int) (xAxis - (vectors.get(i).getY() * scale));
+            x = (float) (yAxis + (vectors.get(i).getX() * scale));
+            y = (float) (xAxis - (vectors.get(i).getY() * scale));
             path.lineTo(x, y);
-            rotatedLocations[i] = new Vector((double) x, (double) y);
+            rotatedLocations[i].set(x, y);
         }
 
         // close path and return
@@ -459,7 +501,8 @@ public class Fuselage extends Graphic {
             r = (int) (e.getWidth() * 100 * getScale() / 2);
             height = (int) (e.getLength() * 100 * getScale());
             e.setRotation(getRotation());
-            e.setBounds(new Bounds(x - r, x + r, y, y + height));
+            //e.setBounds(new Bounds(x-r, x+r, y, y+height)); works but not optimal
+            e.getBounds().setBounds(x-r, x+r, y, y+height);
             e.draw(canvas);
         }
 
@@ -524,6 +567,7 @@ public class Fuselage extends Graphic {
     public double getFuelMass(){ return currentFuelMass; }
     public double getWidth(){ return width; }
     public double getHeight(){ return height; }
+    public double getDragCoefficient(){ return dragCoefficient; }
 
     public int getRelativeCenter(){ return relativeCenter; }
     public int getTrueCenter(){ return trueCenter; }

@@ -27,6 +27,9 @@ public class Background extends Graphic{
     //===== CONSTRUCTOR
     public Background(Bitmap image, int width, int height){
 
+        this.width = width;
+        this.height = height;
+
         super.setScale(image.getWidth() / width);
 
         this.image = Bitmap.createScaledBitmap(image,
@@ -40,13 +43,15 @@ public class Background extends Graphic{
     }
 
     public void update(){
-        float s = (float) Utility.secondsElapsed(previous, System.nanoTime());
-        add((float) velocity.getX() * s, (float) velocity.getY() * s);
 
         if(y < -image.getHeight() + height)
             y = -image.getHeight() + height;
 
-        //Utility.p("X:%f Y%f", x, y);
+        if(y > image.getHeight() * 1.2)
+            y = -image.getHeight();
+
+        float s = (float) Utility.secondsElapsed(previous, System.nanoTime());
+        add((float) velocity.getX() * s, (float) velocity.getY() * s);
 
         previous = System.nanoTime();
     }
@@ -71,9 +76,18 @@ public class Background extends Graphic{
         this.y += y;
     }
 
+    public void set(Vector v){
+        x = (float) -v.getX();
+        y = (float) v.getY() + height - image.getHeight();
+    }
+
     public void reset(){
         x = 0;
         y = -image.getHeight() + height;
+    }
+
+    public boolean atGround(){
+        return y <= height - image.getHeight();
     }
 
     public void setVelocity(Vector v){ velocity = v; }

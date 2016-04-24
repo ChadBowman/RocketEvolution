@@ -60,6 +60,14 @@ public class Engine extends Graphic {
      * @param fromCOM location of Engine on Rocket from Rocket's center of mass.
      */
     public Engine(Chromosome chromosome, Vector fromCOM){
+        // create graphics objects
+        // Set Same Paint for all Engines
+        Paint paint = new Paint();
+        paint.setColor(Color.rgb(57, 57, 57));
+        paint.setStyle(Paint.Style.FILL);
+        setPaint(paint);
+
+        path = new Path();
 
         this.chromosome = chromosome;
         this.fromCOM = fromCOM;
@@ -87,14 +95,6 @@ public class Engine extends Graphic {
         massFlowRate = massFlowRate(throatPressure, throatTemp, molarMass, specificHeat, throatArea);
         exitPressure = exitPressure(throatTemp, mach, specificHeat);
         exitVelocity = exitVelocity(exitPressure, molarMass, specificHeat, chamberTemperature);
-
-        // Set Same Paint for all Engines
-        Paint paint = new Paint();
-        paint.setColor(Color.rgb(57, 57, 57));
-        paint.setStyle(Paint.Style.FILL);
-        setPaint(paint);
-
-        path = new Path();
 
     } // end Constructor
 
@@ -153,7 +153,7 @@ public class Engine extends Graphic {
      */
     private double throatPressure(double k, double cp){
         double p = 1 + ((k - 1) / 2);
-        p = (double) Math.pow(p, -1 * (k / (k - 1))) * cp;
+        p = Math.pow(p, -1 * (k / (k - 1))) * cp;
         return p;
     }
 
@@ -322,19 +322,21 @@ public class Engine extends Graphic {
         //exhaust.draw(canvas); TODO fix
     }
 
+
     @Override
     public void setBounds(Bounds bounds) {
         super.setBounds(bounds);
 
         float x = (float) (bounds.width() / exitRadius * 2);
         float y = (float) (bounds.height() / length);
+
         // use smallest
         float scale = (x < y)? x : y;
         super.setScale(scale);
 
         // set the bounds to the exhaust animation
-        exhaust.setScale(scale);
-        exhaust.setBounds(new Bounds(bounds.getLeft(), 0, bounds.getBottom(), 0));
+        // exhaust.setScale(scale);
+        // exhaust.setBounds(new Bounds(bounds.getLeft(), 0, bounds.getBottom(), 0));
     }
 
     //===== STATIC METHODS

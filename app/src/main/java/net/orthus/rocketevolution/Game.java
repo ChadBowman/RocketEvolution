@@ -14,6 +14,7 @@ import net.orthus.rocketevolution.fuels.Fuel;
 import net.orthus.rocketevolution.fuels.KerosenePeroxide;
 import net.orthus.rocketevolution.simulation.Fitness;
 import net.orthus.rocketevolution.ui.Launchpad;
+import net.orthus.rocketevolution.utility.Utility;
 
 import java.io.File;
 
@@ -35,12 +36,13 @@ public class Game extends Activity {
         Fuel.fuels.add(Fuel.KEROSENE_PEROXIDE, new KerosenePeroxide("", 810, 8));
 
         File PLAYER_FILE = new File(getFilesDir(), "player");
+        Utility.p("EXISTS: %b", PLAYER_FILE.exists());
         // Load player's file
-        Player player = Player.load(PLAYER_FILE);
+        Player player = new Player(); //Player.load(PLAYER_FILE);
 
         // player not there, create new one
-        if(player == null)
-            player = new Player();
+        //if(player == null)
+        //    player = new Player();
 
         DisplayMetrics dm = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(dm);

@@ -74,12 +74,21 @@ public class VectorGroup {
         return new VectorGroup(rotated);
     }
 
+    public VectorGroup negateX(){
+        ArrayList<Vector> negated = new ArrayList<>();
+
+        for(Vector v : vectors)
+            negated.add(new Vector(-v.getX(), v.getY()));
+
+        return new VectorGroup(negated);
+    }
+
     /**
      * Rotates all vectors clock-wise Pi/4
      * @return VectorGroup with all Vectors rotated clock-wise
      */
     public VectorGroup rotateCW(){
-        ArrayList<Vector> rotated = new ArrayList<Vector>();
+        ArrayList<Vector> rotated = new ArrayList<>();
 
         for(Vector v : vectors)
             rotated.add(new Vector(v.getY(), v.getX() * -1));

@@ -13,6 +13,7 @@ public class Earth implements Kinetic {
     //===== CONSTANTS
     public static final double MASS = 5.972e24; // kg
     public static final double RADIUS = 6371000; // m
+    public static final Vector SURFACE = new Vector(0, RADIUS);
 
     //===== INSTANCE VARIABLES
     private Kinematic kinematic;
@@ -92,12 +93,24 @@ public class Earth implements Kinetic {
 
     //===== PUBLIC STATIC METHODS
 
+    public static Vector seaLevelAcc(){
+        return gravitationalAcceleration(SURFACE);
+    }
+
     public static double pressure(Vector fromCenter){
         return atmosphericPressure(fromCenter.getMagnitude() - RADIUS);
     }
 
-    public static Vector gravity(double mass, Vector position){
+    public static double density(Vector fromCenter){
+        return atmosphericDensity(fromCenter.getMagnitude() - RADIUS);
+    }
+
+    public static Vector gravitationalForce(double mass, Vector position){
         return Physics.gravitationalForce(MASS, mass, position.negate());
+    }
+
+    public static Vector gravitationalAcceleration(Vector position){
+        return Physics.gravitationalAcceleration(MASS, position).negate();
     }
 
     public static double acceleration(double r){

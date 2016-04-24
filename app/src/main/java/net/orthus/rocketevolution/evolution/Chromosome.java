@@ -44,7 +44,14 @@ public class Chromosome {
 
     //===== PUBLIC METHODS
 
-    public Chromosome(){}
+    public Chromosome(){
+        this.fuselage = new Tuple<>();
+        this.engine = new Tuple<>();
+        this.fuel = new Tuple<>();
+        this.massDistribution = new Tuple<>();
+        this.material = new Tuple<>();
+        this.color = new Tuple<>();
+    }
 
     public Chromosome randomize(){
 
@@ -122,11 +129,13 @@ public class Chromosome {
     public Tuple<Integer> getFuel(){ return fuel; }
     public Tuple<Integer> getMassDistribution(){ return massDistribution; }
     public Tuple<Integer> getMaterial(){ return material; }
+    public Tuple<Integer> getColor(){ return color; }
 
     public void setFuselage(Tuple<Integer> x){ fuselage = x; }
     public void setEngine(Tuple<Integer> x){ engine = x; }
     public void setFuel(Tuple<Integer> x){ fuel = x; }
     public void setMassDistribution(Tuple<Integer> x){ massDistribution = x; }
     public void setMaterial(Tuple<Integer> x){ material = x; }
+    public void setColor(Tuple<Integer> x){ color = x;}
 
 } // Chromosome

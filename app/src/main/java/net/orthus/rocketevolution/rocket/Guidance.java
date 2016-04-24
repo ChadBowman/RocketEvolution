@@ -20,13 +20,13 @@ public class Guidance {
 
         VarSum[] t = noThrottle();
 
-        for(int i=1; i < engineCount / 2; i++)
-            t[1] = new VarSum(new Variable(0));
+        if(t.length > 2)
+            t[0] = new VarSum(new Variable(-1/500f, 'x'), new Variable(1));
 
         return t;
     }
 
-    // TODO: 15-Mar-16 implement an actual algorithims
+    // TODO: 15-Mar-16 implement an actual algorithim
     public VarSum[] noThrottle(){
 
         VarSum[] eqs = new VarSum[engineCount];
