@@ -24,9 +24,6 @@ import java.util.UUID;
  */
 public class Rocket implements Serializable, Kinetic, Comparable<Rocket>{
 
-    // proportion of Rocket volume dedicated to support systems
-    public static final double MIN_INERT_PROPORTION = 0.1; //TODO check
-    public static final double MAX_INERT_PROPORTION = 0.4; //TODO check if this is realistic
 
     public static final int FALCON9R_MASS = 505846;
 
@@ -39,9 +36,10 @@ public class Rocket implements Serializable, Kinetic, Comparable<Rocket>{
 
     //===== CONSTRUCTORS
     public Rocket(Chromosome chromosome){
+        this.chromosome = chromosome;
         fuselage = new Fuselage(chromosome);
-        id = UUID.randomUUID();
         this.kinematics = new Kinematic();
+        id = UUID.randomUUID();
     }
 
     public Rocket(){
@@ -62,18 +60,12 @@ public class Rocket implements Serializable, Kinetic, Comparable<Rocket>{
 
     }
 
-    //===== STATIC METHODS
-    public static Tuple<Integer> randomizeMassDistributions(){
-
-        double inert = Utility.rand(MIN_INERT_PROPORTION, MAX_INERT_PROPORTION);
-        double fuel = Utility.rand(0, 1 - inert);
-
-        Tuple<Integer> result = new Tuple<>();
-        result.add((int)(inert * 1000));
-        result.add((int)(fuel * 1000));
-
-        return result;
+    public String toString(){
+        return String.format("ID:%s CH:%s", id.toString(), chromosome.toString());
     }
+
+    //===== STATIC METHODS
+
 
     //===== ACCESSORS
     public Fuselage getFuselage(){ return fuselage; }

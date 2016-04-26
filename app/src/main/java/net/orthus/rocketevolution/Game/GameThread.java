@@ -1,4 +1,4 @@
-package net.orthus.rocketevolution;
+package net.orthus.rocketevolution.Game;
 
 import android.graphics.Canvas;
 import android.view.SurfaceHolder;

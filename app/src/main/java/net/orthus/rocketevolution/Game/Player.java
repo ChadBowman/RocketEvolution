@@ -1,4 +1,4 @@
-package net.orthus.rocketevolution;
+package net.orthus.rocketevolution.Game;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -8,6 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -17,15 +18,12 @@ public class Player implements Serializable {
 
     //===== INSTANCE VARIABLES
     private int selectedFitness;
-    private ArrayList<ArrayList<String>> population;
+    private ArrayList<UUID> generation;
 
     public Player(){
-        population = new ArrayList<>();
+        generation = new ArrayList<>();
     }
 
-    public void addGeneration(ArrayList<String> ids){
-        population.add(ids);
-    }
 
     public boolean write(File file){
 
@@ -63,9 +61,10 @@ public class Player implements Serializable {
 
     //===== ACCESSORS
     public int getSelectedFitness(){ return selectedFitness; }
-    public ArrayList<ArrayList<String>> getPopulation(){ return population; }
+    public ArrayList<UUID> getGeneration(){ return generation; }
 
     public void setSelectedFitness(int x){ selectedFitness = x; }
-    public void setPopulation(ArrayList<ArrayList<String>> pop){ population = pop; }
+    public void setGeneration(ArrayList<UUID> x){ generation = x; }
+
 
 } // Player

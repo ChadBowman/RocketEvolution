@@ -37,9 +37,8 @@ public class SimpleCrossover implements Genetic{
     public SimpleCrossover(Hash<UUID, Rocket> generation) {
 
         this.generation = generation.values();
-
-        mutationRate = 0.01f; // 1% chance of any value changing randomly
-        crossoverRate = 0.25f;
+        mutationRate = 0.05f;
+        crossoverRate = 0.3f;
     }
 
 
@@ -47,11 +46,11 @@ public class SimpleCrossover implements Genetic{
     private Tuple<Rocket> topHalfPerformers(){
 
         Tuple<Rocket> theBest = new Tuple<>();
-        Collections.sort(this.generation);
 
-        for(int i = generation.size() - 1; i >= generation.size() / 2; i--)
+        Collections.sort(generation);
+
+        for(int i=0; i < generation.size() / 2; i++)
             theBest.add(generation.get(i));
-        Utility.p("The best: %d", theBest.size());
 
 
         return theBest;
@@ -70,7 +69,7 @@ public class SimpleCrossover implements Genetic{
 
         // inert mass
         if(r.nextFloat() < mutationRate) {
-            int inert = (int)(Utility.rand(Rocket.MIN_INERT_PROPORTION, Rocket.MAX_INERT_PROPORTION) * 1000);
+            int inert = (int)(Utility.rand(Fuselage.MIN_INERT_PROPORTION, Fuselage.MAX_INERT_PROPORTION) * 1000);
             result.set(0, inert);
 
             //check for distribution > 1
@@ -122,21 +121,32 @@ public class SimpleCrossover implements Genetic{
         return x;
     }
 
+    private Tuple<Integer> mutateColor(Tuple<Integer> x){
+
+        if(r.nextFloat() < mutationRate)
+            return Fuselage.randomColor();
+
+        return x;
+    }
+
     //=== Crossover methods
 
     private Pair<Tuple<Integer>, Tuple<Integer>> cross(Tuple<Integer> a, Tuple<Integer> b){
 
-        Tuple<Integer> childA = new Tuple<>();
-        Tuple<Integer> childB = new Tuple<>();
+        Tuple<Integer> childA;
+        Tuple<Integer> childB;
 
-        for(int i=0; i < a.size(); i++)
-            if(r.nextFloat() < crossoverRate) {
-                childA.add(b.get(i));
-                childB.add(a.get(i));
-            }else {
-                childA.add(a.get(i));
-                childB.add(b.get(i));
-            }
+        // determine if attributes should be crossed over
+        boolean cross = r.nextFloat() < crossoverRate;
+
+
+        if(cross) {
+            childA = new Tuple<>(b);
+            childB = new Tuple<>(a);
+        }else{
+            childA = new Tuple<>(a);
+            childB = new Tuple<>(b);
+        }
 
         return new Pair<>(childA, childB);
     }
@@ -197,6 +207,8 @@ public class SimpleCrossover implements Genetic{
 
     private Tuple<Rocket> breed(int masterIndex, Tuple<Rocket> group){
 
+        //group.add(new Rocket());
+
         // resulting children
         Tuple<Rocket> children = new Tuple<>();
 
@@ -205,50 +217,41 @@ public class SimpleCrossover implements Genetic{
         if(idx == masterIndex)
             idx = (idx + 1) % group.size();
 
-        Utility.p("Breeding %d wih %d", masterIndex, idx);
-
         Chromosome a = group.get(masterIndex).getChromosome();
         Chromosome b = group.get(idx).getChromosome();
 
-        Chromosome child1 = new Chromosome().randomize();
-        Chromosome child2 = new Chromosome().randomize();
-        Utility.p("C1: %s", a.toString());
+        Chromosome child1 = new Chromosome();
+        Chromosome child2 = new Chromosome();
 
         // fuselage
-        Pair<Tuple<Integer>, Tuple<Integer>> f = crossFuselage(a.getFuselage(), b.getFuselage());
-        child1.setFuselage(f.first); //mutateFuselage(f.first));
-        child2.setFuselage(f.second); //mutateFuselage(f.second));
-        Utility.p("Fuselage: %d, %d", f.first.size(), f.second.size());
+        Pair<Tuple<Integer>, Tuple<Integer>> f;
+        f = crossFuselage(a.getFuselage(), b.getFuselage());
+        child1.setFuselage(mutateFuselage(f.first));
+        child2.setFuselage(mutateFuselage(f.second));
 
         // engine
         f = cross(a.getEngine(), b.getEngine());
-        child1.setEngine(f.first); //mutateEngine(f.first));
-        child2.setEngine(f.second); //mutateEngine(f.second));
-        Utility.p("Engine: %d, %d", f.first.size(), f.second.size());
-
+        child1.setEngine(mutateEngine(f.first));
+        child2.setEngine(mutateEngine(f.second));
 
         // fuel
         f = cross(a.getFuel(), b.getFuel());
-        child1.setFuel(f.first); //mutateFuel(f.first));
-        child2.setFuel(f.second); //mutateFuel(f.second));
-        Utility.p("Fuel: %d, %d", f.first.get(0), f.second.get(0));
+        child1.setFuel(mutateFuel(f.first));
+        child2.setFuel(mutateFuel(f.second));
 
         // mass distribution
         f = cross(a.getMassDistribution(), b.getMassDistribution());
-        child1.setMassDistribution(f.first); //mutateMassDistribution(f.first));
-        child2.setMassDistribution(f.second); //mutateMassDistribution(f.second));
-        Utility.p("Mass Dist: %d, %d", f.first.size(), f.second.size());
+        child1.setMassDistribution(mutateMassDistribution(f.first));
+        child2.setMassDistribution(mutateMassDistribution(f.second));
 
         f = cross(a.getColor(), b.getColor());
-        child1.setColor(f.first);
-        child2.setColor(f.second);
+        child1.setColor(mutateColor(f.first));
+        child2.setColor(mutateColor(f.second));
 
         // material
-        //f = cross(a.getMaterial(), b.getMaterial());
-        //child1.setMaterial(mutateMaterial(f.first));
-        //child2.setMaterial(mutateMaterial(f.second));
-
-        Utility.p("Children: %s, %s", child1.toString(), child2.toString());
+        f = cross(a.getMaterial(), b.getMaterial());
+        child1.setMaterial(mutateMaterial(f.first));
+        child2.setMaterial(mutateMaterial(f.second));
 
         // add new children to population
         children.add(new Rocket(child1));
@@ -268,18 +271,31 @@ public class SimpleCrossover implements Genetic{
     public Hash<UUID, Rocket> evolve(){
 
         Hash<UUID, Rocket> newGroup = new Hash<>();
-        Tuple<Rocket> children = new Tuple<>();
         Tuple<Rocket> breedingGroup = topHalfPerformers();
 
-        // TODO: 27-Mar-16 thread each breading cycle in loop
-        for(int i=0; i < breedingGroup.size(); i++)
-            children.addAll(breed(i, breedingGroup));
 
-        for(Rocket r : children)
-            newGroup.add(UUID.randomUUID(), r);
+        // TODO: 27-Mar-16 thread each breading cycle in loop
+        Tuple<Rocket> g;
+        // for each individual in breeding group, breed with another
+        for(int i=0; i < breedingGroup.size(); i++) {
+
+            g = breed(i, breedingGroup);
+
+            // add the children to the new group
+            for(int j=0; j < g.size(); j++)
+                newGroup.add(g.get(j).getId(), g.get(j));
+        }
+
+        // if generation is odd, breed in a completely random rocket for
+        // more variety and to keep the bred generation the same size
+        if(generation.size() % 2 == 0) {
+            breedingGroup.add(new Rocket());
+            g = breed(breedingGroup.size() - 1, breedingGroup);
+            newGroup.add(g.get(0).getId(), g.get(0));
+        }
 
         return newGroup;
 
     } // evolve()
 
-} // Tournament
+} // SimpleCrossover

@@ -22,16 +22,17 @@ public class Chromosome {
     private Tuple<Integer> massDistribution;
     private Tuple<Integer> material;
     private Tuple<Integer> color;
+    private int numVectors; // used only in DifferentialEvolution
     // Guidance system
 
 
     //===== CONSTRUCTOR
 
-    public Chromosome(Tuple<Integer> fuselage,
-                      Tuple<Integer> engine,
-                      Tuple<Integer> fuel,
-                      Tuple<Integer> massDistribution,
-                      Tuple<Integer> material,
+    public Chromosome(Tuple<Integer> fuselage,          // n
+                      Tuple<Integer> engine,            // 2
+                      Tuple<Integer> fuel,              // 1
+                      Tuple<Integer> massDistribution,  // 2
+                      Tuple<Integer> material,          // 1
                       Tuple<Integer> color){
 
         this.fuselage = fuselage;
@@ -59,7 +60,7 @@ public class Chromosome {
                 Fuselage.randomizedFuselageParameters(),
                 Engine.randomizedEngineParameters(),
                 Fuel.randomizeFuelParameters(),
-                Rocket.randomizeMassDistributions(),
+                Fuselage.randomizeMassDistributions(),
                 Material.randomizeMaterialParameters(),
                 Fuselage.randomColor());
     }
@@ -130,6 +131,7 @@ public class Chromosome {
     public Tuple<Integer> getMassDistribution(){ return massDistribution; }
     public Tuple<Integer> getMaterial(){ return material; }
     public Tuple<Integer> getColor(){ return color; }
+    public int getNumVectors(){ return numVectors; }
 
     public void setFuselage(Tuple<Integer> x){ fuselage = x; }
     public void setEngine(Tuple<Integer> x){ engine = x; }
@@ -137,5 +139,6 @@ public class Chromosome {
     public void setMassDistribution(Tuple<Integer> x){ massDistribution = x; }
     public void setMaterial(Tuple<Integer> x){ material = x; }
     public void setColor(Tuple<Integer> x){ color = x;}
+    public void setNumVectors(int x){ numVectors = x; }
 
 } // Chromosome

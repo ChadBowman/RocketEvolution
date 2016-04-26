@@ -35,7 +35,7 @@ public class Engine extends Graphic {
     // the radius of the throat exit arc is this factor times the throat radius
     private static final double THROAT_EXIT_FACTOR = 0.382;
     private static final double EXPANSION_FACTOR = 0.75;
-    private static final int MAX_LENGTH_FACTOR = 5; //10;
+    private static final int MAX_LENGTH_FACTOR = 5;
 
     //=== INSTANCE VARIABLES
 
@@ -45,7 +45,7 @@ public class Engine extends Graphic {
     private Animation exhaust;
 
     private double length,
-            exitRadius,  // exhaust radius in mm
+            exitRadius,         // exhaust radius in mm
             exitArea,           // exit area in m^2
             massFlowRate,       // mass flow rate of engine (kg/s)
             exitVelocity,       // exit velocity of gas (m/s)

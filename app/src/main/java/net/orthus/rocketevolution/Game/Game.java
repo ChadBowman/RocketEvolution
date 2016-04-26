@@ -1,18 +1,17 @@
-package net.orthus.rocketevolution;
+package net.orthus.rocketevolution.Game;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Toast;
 
+import net.orthus.rocketevolution.R;
 import net.orthus.rocketevolution.fuels.Fuel;
 import net.orthus.rocketevolution.fuels.KerosenePeroxide;
-import net.orthus.rocketevolution.simulation.Fitness;
+import net.orthus.rocketevolution.materials.Material;
+import net.orthus.rocketevolution.materials.TestMaterial;
 import net.orthus.rocketevolution.ui.Launchpad;
 import net.orthus.rocketevolution.utility.Utility;
 
@@ -34,6 +33,8 @@ public class Game extends Activity {
 
         // Add fuels
         Fuel.fuels.add(Fuel.KEROSENE_PEROXIDE, new KerosenePeroxide("", 810, 8));
+        // Add materials
+        Material.materials.add(Material.TEST_MAT, new TestMaterial());
 
         File PLAYER_FILE = new File(getFilesDir(), "player");
         Utility.p("EXISTS: %b", PLAYER_FILE.exists());
@@ -44,11 +45,10 @@ public class Game extends Activity {
         //if(player == null)
         //    player = new Player();
 
-        DisplayMetrics dm = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(dm);
+
 
         // Start launchpad up
-        setContentView(new Launchpad(this, player, dm.widthPixels, dm.heightPixels));
+        setContentView(new Launchpad(this, player));
     }
 
     @Override

@@ -27,6 +27,7 @@ public class Tuple<O> implements Collection<O>{
         list.add(value);
     }
 
+
     public Tuple(Collection<O> values){
         list = new ArrayList<>();
         list.addAll(values);
@@ -36,22 +37,24 @@ public class Tuple<O> implements Collection<O>{
         this.list = list;
     }
 
+    @SafeVarargs
+    public Tuple(O... values){
+
+        if(list == null)
+            list = new ArrayList<>();
+
+        Collections.addAll(list, values);
+    }
+
     //===== PUBLIC METHODS
-    public Tuple<O>swap(){
+    public Tuple<O> flip(){
 
-        try {
-            if (list.size() == 2) {
-                Tuple<O> t = new Tuple<>();
-                t.add(list.get(1));
-                t.add(list.get(0)) ;
-                return t;
-            }else
-                throw new Exception("Only a Tuple with two elements can be swapped!");
+        Tuple<O> result = new Tuple<>();
 
-        }catch( Exception e){
-            e.printStackTrace();
-            return null;
-        }
+        for(int i = list.size()-1; i > -1; i--)
+            result.add(list.get(i));
+
+        return result;
 
     } // Tuple()
 
@@ -59,7 +62,6 @@ public class Tuple<O> implements Collection<O>{
     public O get(int index){
         return list.get(index);
     }
-
     public void set(int index, O value){
         list.set(index, value);
     }
@@ -71,7 +73,7 @@ public class Tuple<O> implements Collection<O>{
         return list.size();
     }
 
-    //===== INTERFACES
+    //===== OVERRIDES
 
     @Override
     public boolean add(O object) {
@@ -84,7 +86,7 @@ public class Tuple<O> implements Collection<O>{
     }
 
     @Override
-    public boolean addAll(Collection<? extends O> collection) {
+    public boolean addAll(@NonNull Collection<? extends O> collection) {
         return list.addAll(collection);
     }
 
@@ -99,7 +101,7 @@ public class Tuple<O> implements Collection<O>{
     }
 
     @Override
-    public boolean containsAll(Collection<?> collection) {
+    public boolean containsAll(@NonNull Collection<?> collection) {
         return list.containsAll(collection);
     }
 
@@ -115,12 +117,12 @@ public class Tuple<O> implements Collection<O>{
     }
 
     @Override
-    public boolean removeAll(Collection<?> collection) {
+    public boolean removeAll(@NonNull Collection<?> collection) {
         return list.removeAll(collection);
     }
 
     @Override
-    public boolean retainAll(Collection<?> collection) {
+    public boolean retainAll(@NonNull Collection<?> collection) {
         return list.retainAll(collection);
     }
 
@@ -132,9 +134,10 @@ public class Tuple<O> implements Collection<O>{
 
     @NonNull
     @Override
-    public <T> T[] toArray(T[] array) {
-        return list.toArray(array);
+    public <T> T[] toArray(@NonNull T[] array) {
+        return array;
     }
+
 
     //=== ACCESSORS
     public ArrayList<O> getList(){ return list; }

@@ -29,9 +29,6 @@ public class Generation {
         // change this back the way it was
     }
 
-    public Generation(Generation previous){
-        generation = new SimpleCrossover(previous.getGeneration()).evolve();
-    }
 
     //===== PUBLIC METHODS
     public ArrayList<String> idList(){
@@ -48,7 +45,7 @@ public class Generation {
         for(int i=0; i < r.size(); i++){
             //new Thread(){
             //   public void run(){
-            r.get(i).setSimulation(new Simulator(r.get(i)).run(2, 120));
+            r.get(i).setSimulation(new Simulator(r.get(i)).run(5, 120));
             //   }
             // }.start();
         }
@@ -87,6 +84,8 @@ public class Generation {
 
     //===== ACCESSORS
     public Hash<UUID, Rocket> getGeneration(){ return generation; }
+
+    public void setGeneration(Hash<UUID, Rocket> x){ generation = x; }
 
     //===== STATIC METHODS
 /*    public static Generation loadGeneration(ArrayList<String> ids, File dir){

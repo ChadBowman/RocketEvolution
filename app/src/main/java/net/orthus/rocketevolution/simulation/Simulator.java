@@ -19,6 +19,7 @@ import java.util.ArrayList;
  */
 public class Simulator {
 
+
     private Rocket rocket;
     public final Vector GRAV = new Vector(0, -9.81);
     public Simulator(Rocket rocket){
@@ -105,8 +106,8 @@ public class Simulator {
 
             // Set Kinematics
             k.setAcceleration(step.first.add(gravity).add(drag)); //newAngle(k.getRotPos()).add(GRAV));
-            //k.setVelocity(k.getVelocity().add(k.getAcceleration().multiply(dt)));
-            k.getVelocity().add_(k.getAcceleration().multiply(dt));
+            k.setVelocity(k.getVelocity().add(k.getAcceleration().multiply(dt)));
+            //k.getVelocity().add_(k.getAcceleration().multiply(dt)); (no idea why this doesn't work)
             k.getPosition().add_(k.getVelocity().multiply(dt));
 
 /*            Utility.p("[%.2f] V:%s A:%s, R:%.2f%s",
@@ -116,7 +117,7 @@ public class Simulator {
                     k.getRotPos(),
                     Utility.DEGREE);*/
 
-            k.setRotAcc(step.second); // TODO: 18-Mar-16 add aerodynamic forces
+            k.setRotAcc(step.second);
             k.setRotVel(k.getRotVel() + (k.getRotAcc() * dt));
             k.setRotPos(k.getRotPos() + (k.getRotVel() * dt));
 

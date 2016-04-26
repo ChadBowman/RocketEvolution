@@ -5,20 +5,23 @@ import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.Typeface;
+import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.widget.Toast;
+import android.view.WindowManager;
 
-import net.orthus.rocketevolution.GameThread;
-import net.orthus.rocketevolution.Player;
+import net.orthus.rocketevolution.Game.GameThread;
+import net.orthus.rocketevolution.Game.Player;
 import net.orthus.rocketevolution.R;
+import net.orthus.rocketevolution.evolution.SimpleCrossover;
+import net.orthus.rocketevolution.math.Vector;
 import net.orthus.rocketevolution.population.Generation;
 import net.orthus.rocketevolution.rocket.Rocket;
 import net.orthus.rocketevolution.simulation.Fitness;
 import net.orthus.rocketevolution.simulation.Frame;
+import net.orthus.rocketevolution.utility.Tuple;
 import net.orthus.rocketevolution.utility.Utility;
 
 import java.util.Locale;
@@ -31,6 +34,7 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
 
     //public static final int deviceWidth = 1440;
     //public static final int deviceHeight = 2560;
+    private static final Tuple<Integer> referenceDimensions = new Tuple<>(1440, 2560);
     public static final int MILLION = 1000000;
 
     private static final int LAUNCH_DELAY = 3;
@@ -41,7 +45,7 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
 
     // Graphic elements
     private Background bg;
-    private Animation explode;//, exhaust;
+    private Animation explode; //, exhaust;
     private Bounds rocketBound, exploBound;
     private Label popLabel, fitLabel, ticker, fuel, loc, speed, genL, acc;
 
@@ -52,22 +56,30 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
 
     // Temp elements
     private Rocket currentRocket;
-    private Generation currentGen;
+    private Generation currentGen, nextGen;
     private int workingIndex;
     private Frame currentFrame;
     private boolean rud;
 
-    private int genSize = 4;
+    private int genSize = 19;
     private int genNum, rocNum;
 
-    public Launchpad(Context context, Player player, int width, int height){
+    public Launchpad(Context context, Player player){
         super(context);
         getHolder().addCallback(this);
         setFocusable(true);
 
+        // get display dimensions
+        DisplayMetrics dis = new DisplayMetrics();
+        WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
+        wm.getDefaultDisplay().getMetrics(dis);
+
+        deviceWidth = dis.widthPixels;
+        deviceHeight = dis.heightPixels;
+
+        Utility.p("%d x %d", deviceWidth, deviceHeight);
+
         this.player = player;
-        deviceWidth = width;
-        deviceHeight = height;
         genNum = 1;
         rocNum = 0;
 
@@ -78,10 +90,11 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
                 deviceHeight / 2, 3/4f * deviceHeight);
 
 
-        if(player.getPopulation().size() == 0) {
+        // player is a virgin, let's generate them some fresh rockets ;)
+        if(player.getGeneration().size() == 0) {
             currentGen = new Generation(genSize);
             currentGen.runSims();
-            player.addGeneration(currentGen.idList());
+            player.setGeneration(currentGen.getGeneration().keys());
         }
 
 
@@ -109,7 +122,7 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
         fitLabel.setTextLocation(100, 100);
 
         // Ticker label
-        ticker = new Label("T-00s", null);
+        ticker = new Label();
         ticker.setBounds(new Bounds(deviceWidth / 3f, 2 * deviceWidth / 3f, 19/20f * deviceHeight,  deviceHeight));
         ticker.setFont(Color.WHITE, 150, Typeface.DEFAULT);
 
@@ -145,7 +158,7 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     private void nextRocket(){
-        Utility.p("Grabbing new rocket.");
+
         //if(thread != null)
             //Utility.p("Average FPS: %f", thread.getAverageFPS());
 
@@ -155,8 +168,7 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
         // get new rocket from generation
         currentRocket = currentGen.getGeneration().values().get(workingIndex);
         //currentRocket.getSimulation().print(workingIndex);
-        Utility.p("Drag: %.3f Type: %s", currentRocket.getFuselage().getDragCoefficient(),
-                currentRocket.getFuselage().type);
+
         launchTime = System.nanoTime();
         // set up
         currentRocket.getFuselage().setBounds(rocketBound);
@@ -170,10 +182,12 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     private void breedNew(){
-        currentGen = new Generation(currentGen);
+
+        currentGen.setGeneration(new SimpleCrossover(currentGen.getGeneration()).evolve());
+        //currentGen.setGeneration(new DifferentialEvolution(currentGen.getGeneration()).evolve());
+        currentGen.runSims();
         genNum++;
         rocNum = 0;
-        currentGen.runSims();
         workingIndex = 0;
     }
 
@@ -206,18 +220,22 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
         // Grab a new time
         currentTime = System.nanoTime();
 
+
         if(Utility.secondsElapsed(launchTime, currentTime) > 2 && currentFrame.getPosition().getY() < 0)
             rud = true;
 
         // Last rocket exploded
         if(rud && Utility.secondsElapsed(rudTime, currentTime) > 1){
 
-
             // grab the next rocket
             nextRocket();
 
         // current rocket still going
         }else if(!rud){
+
+            //TEMP
+            //if(Utility.secondsElapsed(launchTime, currentTime) > 2)
+            //    rud = true;
 
             // check for RUD
             if(currentRocket.getSimulation().isRUD(Utility.secondsElapsed(launchTime, currentTime))){
@@ -234,7 +252,7 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
                 speed.setText(String.format(Locale.US, "Speed: %.0f m/s", currentFrame.getVelocity().getMagnitude()));
                 fuel.setText(String.format(Locale.US, "Fuel: %.0f%%", currentFrame.getRemainingFuelProportion() * 100));
                 loc.setText(String.format(Locale.US, "Altitude: %.2f Km",
-                        currentFrame.getPosition().getY() / 1000));
+                        currentFrame.getPosition().getY() / 1000f));
                 genL.setText(String.format(Locale.US, "Generation %d, Rocket %d", genNum, rocNum));
 
                 //update background
@@ -284,7 +302,7 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
 
             if(popLabel.activate(event.getX(), event.getY())) {
                 Intent i = new Intent(getContext(), PopulationActivity.class);
-                i.putExtra("pop", player.getPopulation());
+                i.putExtra("pop", player.getGeneration());
                 i.putExtra("test", "Rocket");
                 getContext().startActivity(i);
             }

@@ -12,7 +12,7 @@ import java.util.UUID;
  */
 public abstract class Fuel{
 
-    //=== CONSTANTS
+    //===== CONSTANTS
     public static final int KEROSENE_PEROXIDE = 0;
 
     //===== CLASS VARIABLES
@@ -36,7 +36,7 @@ public abstract class Fuel{
         this.id = id;
     }
 
-    //===== CLASS METHODS
+    //===== STATIC METHODS
 
     public static Tuple<Integer> randomizeFuelParameters(){
 

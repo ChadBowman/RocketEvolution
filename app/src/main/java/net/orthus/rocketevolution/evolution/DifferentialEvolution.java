@@ -4,6 +4,8 @@ import android.util.Pair;
 
 import net.orthus.rocketevolution.fuels.Fuel;
 import net.orthus.rocketevolution.materials.Material;
+import net.orthus.rocketevolution.population.Generation;
+import net.orthus.rocketevolution.rocket.Engine;
 import net.orthus.rocketevolution.rocket.Fuselage;
 import net.orthus.rocketevolution.rocket.Rocket;
 import net.orthus.rocketevolution.simulation.Fitness;
@@ -13,182 +15,207 @@ import net.orthus.rocketevolution.utility.Utility;
 
 import java.text.ChoiceFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Random;
 import java.util.UUID;
 
 /**
  * Created by Ross Wendt on 18-Mar-16.
  */
-public class DifferentialEvolution {
+public class DifferentialEvolution implements Genetic{
 
-    /*//===== INSTANCE VARIABLES
-
+    //===== INSTANCE VARIABLES
+    private ArrayList<Rocket> generation;
     public int crossoverRate = 7; //this is used as modulo, will need to experiment with different values, based on chromosome values
     // actually, we might be able to do something similar with the amplification factor- it could just be modulo... hrm
 
-    private ArrayList<Pair<Chromosome, Fitness>> population;
 
     //===== CONSTRUCTOR
-    public DifferentialEvolution(Hash<UUID, Rocket> population){
+    public DifferentialEvolution(Hash<UUID, Rocket> generation){
+        this.generation = generation.values();
 
-        ArrayList<Pair<Chromosome, Fitness>> x = new ArrayList<>();
-
-        for(Rocket rocket : population.values())
-            x.add(new Pair<>(rocket.getChromosome(), rocket.fitnessScore(fitnessKey)));
-
-        this.population = x;
     }
 
     @Override
-    public Tuple<Rocket> evolve() {
+    public Hash<UUID, Rocket> evolve() {
 
-        ArrayList<Tuple<Integer>> ResultantPopulation = new ArrayList<>();
+        Tuple<Rocket> group = topHalfPerformers();
+        Tuple<Rocket> children = new Tuple<>();
 
-        for (Tuple<Integer> individual : population) {
+        int idx, idx2;
+        for(int i=0; i < group.size(); i++){
 
-            //select three distinct individuals
-            ArrayList<Tuple<Integer>> selection = createTrialVector();
-            // mutate 'em, which results in a single mutant
-            Tuple<Integer> mutant = mutation(selection);
-            //yep, we crossover the mutant with itself, using modulo (the crossover rate above)
-            Tuple<Integer> crossbred = crossover(mutant);
+            idx = Utility.rand(0, group.size() - 1);
+            idx2 = Utility.rand(0, group.size() - 1);
 
-            *//*
-            Population size, how we selection children, and whether we replace parents in the original
-            gene pool are all tunable params, classically speaking. We don't necessarily need an
-            implementation where we can change all that easily, so right now, here's how it works:
-            We do not maintain any of the original parents- we only have mutants and crossbred
-            children added back to the population. We can change it, tho
-             *//*
-            if (mutant.fitness() > crossbred.fitness()) {
-                ResultantPopulation.add(mutant);
-            } else {
-                ResultantPopulation.add(crossbred);
-            }
+            if(idx == i)
+                idx = (idx + 1) % group.size();
+            if(idx2 == i)
+                idx2 = (idx + 1) % group.size();
+
+            while(idx != idx2 && idx2 != i)
+                idx2 = (idx + 1) % group.size();
+
+
+            children.add(new Rocket(tadd(group.get(i).getChromosome(),
+                    tsub(group.get(idx).getChromosome(), group.get(idx2).getChromosome()))));
         }
 
+        for(int i=0; i < group.size(); i++){
 
-        ArrayList<Tuple<Integer>> result = new ArrayList<Tuple<Integer>>();
-        return null;
-    }
+            idx = Utility.rand(0, group.size() - 1);
+            idx2 = Utility.rand(0, group.size() - 1);
 
-    public ArrayList<Tuple<Integer>> createTrialVector() {
+            if(idx == i)
+                idx = (idx + 1) % group.size();
+            if(idx2 == i)
+                idx2 = (idx + 1) % group.size();
 
-        int randIndex1 = 0, randIndex2 = 0, randIndex3 = 0;
-        ArrayList<Tuple<Integer>> selection = new ArrayList<>();
-        Tuple<Integer> mutant = new Tuple<>();
-        boolean selected = false;
+            while(idx != idx2 && idx2 != i)
+                idx2 = (idx + 1) % group.size();
 
-        while (randIndex1 == randIndex2 || randIndex2 == randIndex3 || randIndex1 == randIndex3) { //want three distinct indices, corresponding to distinct individuals
-            randIndex1 = Utility.rand(0, population.size() - 1);
-            randIndex2 = Utility.rand(0, population.size() - 1);
-            randIndex3 = Utility.rand(0, population.size() - 1);
+
+            children.add(new Rocket(tadd(group.get(i).getChromosome(),
+                    tsub(group.get(idx).getChromosome(), group.get(idx2).getChromosome()))));
         }
 
-        selection.add(population.get(randIndex1));
-        selection.add(population.get(randIndex2));
-        selection.add(population.get(randIndex3));
-
-        return selection;
-    }
-
-    *//*
-    Differential evolution! Basically, we take three unique individuals, and take the difference of two.
-    Then, we add that difference to the third. Bamo! DE.
-
-    There should be an "amplification" term on the difference, but it's typically real valued
-    between 0 and 1. So we need to figure out how to deal with that
-     *//*
-    public Tuple<Integer> mutation(ArrayList<Tuple<Integer>> selection) {
-        Tuple<Integer> mutant = new Tuple<Integer>();
-        mutant = tadd(selection.get(0), tsub(selection.get(1), selection.get(2))); //this is why it's called differential evolution
-        return mutant;
-    }
-
-    public Tuple<Integer> crossover(Tuple<Integer> individualIn) {
-        Tuple<Integer> result = new Tuple<>();
-        for (int i = 0; i < individualIn.size(); i++) {
-            int modulo = individualIn.get(i) % crossoverRate;
-            result.add(modulo);
-        }
-        return result;
-    }
-
-    public Tuple<Integer> tsub(Tuple<Integer> a, Tuple<Integer> b) { //tuple subtraction
-        Tuple<Integer> result = new Tuple<>();
-
-        for (int i = 0; i < a.size(); i++ ) {
-            int subtraction = a.get(i) - b.get(i);
-            result.add(subtraction);
-        }
+        Hash<UUID, Rocket> result = new Hash<>();
+        for(Rocket r : children)
+            result.add(r.getId(), r);
 
         return result;
     }
 
-    public Chromosome tadd(Chromosome a, Chromosome b) { //tuple addition
+    private Tuple<Rocket> topHalfPerformers(){
+
+        Tuple<Rocket> theBest = new Tuple<>();
+
+        Collections.sort(generation);
+
+        for(int i=0; i < generation.size() / 2; i++)
+            theBest.add(generation.get(i));
+
+
+        return theBest;
+    }
+
+
+
+    //subtraction
+    private Chromosome tsub(Chromosome a, Chromosome b) {
+
+        Chromosome chrom = new Chromosome();
 
         //=== Fuselage
+        // set only the vector number difference for the fuselage for now.
+        // this value can be negative
+        chrom.setNumVectors(a.getFuselage().size() - b.getFuselage().size());
+
+        Tuple<Integer> magnitudes = new Tuple<>();
+
+        // smallest and largest vector amount
+        Tuple<Integer> largest, smallest;
+
+        // subtract vector lengths from each other, these may turn out to be negative for now
+        if(a.getFuselage().size() > b.getFuselage().size())
+            for(int i=0; i < a.getFuselage().size(); i++)
+                magnitudes.add(a.getFuselage().get(i) - b.getFuselage().get(i % b.getFuselage().size()));
+
+        else
+            for(int i=0; i < b.getFuselage().size(); i++)
+                magnitudes.add(b.getFuselage().get(i) - a.getFuselage().get(i % a.getFuselage().size()));
+
+        // give chromosome the largest amount of vectors (these will be cut down later)
+        chrom.setFuselage(magnitudes);
+
+        //=== Engine
+        Tuple<Integer> engine = new Tuple<>();
+        engine.add(a.getEngine().first() - b.getEngine().first());  // throat radius
+        engine.add(a.getEngine().last() - b.getEngine().last());    // length
+        chrom.setEngine(engine);
+
+        //=== Fuel
+        Tuple<Integer> fuel = new Tuple<>();
+        fuel.add(a.getFuel().first() - b.getFuel().first());        // fuel id
+        chrom.setFuel(fuel);
+
+        //=== Mass Distribution
+        Tuple<Integer> massdistro = new Tuple<>();
+        massdistro.add(a.getMassDistribution().first() - b.getMassDistribution().first());  // inert
+        massdistro.add(a.getMassDistribution().last() - b.getMassDistribution().last());    // fuel
+        chrom.setMassDistribution(massdistro);
+
+        //=== Material
+        Tuple<Integer> material = new Tuple<>();
+        material.add(a.getMaterial().first() - b.getMaterial().first());    // fuel id
+        chrom.setMaterial(material);
+
+        return chrom;
+    }
+
+
+    //addition
+    private Chromosome tadd(Chromosome a, Chromosome b) {
+
+        Chromosome chrom = new Chromosome();
+
+        //=== Fuselage
+
         Tuple<Integer> fuselage = new Tuple<>();
-        Tuple<Integer> fa = a.getFuselage(), fb = b.getFuselage();
+        int num = b.getNumVectors();
+        if(a.getFuselage().size() + num < Fuselage.MIN_NUMBER_OF_FUSELAGE_VECTORS)
+            num = Fuselage.MIN_NUMBER_OF_FUSELAGE_VECTORS;
 
-        // have new fuselage have vector amounts somewhere between parents
-        int numberOfVectors = Utility.rand(fa.size(), fb.size());
+        for(int i=0; i < num; i++) {
+            int res = a.getFuselage().get(i % a.getFuselage().size())
+                        + b.getFuselage().get(i % b.getFuselage().size());
 
-        // add values to create new fuselage, mod if one tuple were to go off the end of the array
-        // should probably check for MAX_FUSELAGE_VECTOR_LENGTH but environment will probably limit for us
-        for(int i=0; i < numberOfVectors; i++){
-
-            if (i >= fa.size())
-                fuselage.add(fa.get(i % fa.size()) + fb.get(i));
-            else if(i >= fb.size())
-                fuselage.add(fa.get(i) + fb.get(i % fb.size()));
+            if (res < Fuselage.MIN_FUSELAGE_VECTOR_LENGTH)
+                fuselage.add(Fuselage.MIN_FUSELAGE_VECTOR_LENGTH);
             else
-                fuselage.add(fa.get(i) + fb.get(i));
+                fuselage.add(res);
         }
+
+        chrom.setFuselage(fuselage);
 
         //=== Engine
         Tuple<Integer> engine = new Tuple<>();
 
-        for(int i=0; i < a.getEngine().size(); i++)
-            engine.add(a.getEngine().get(i) + b.getEngine().get(i));
+        // throat radius
+        int rad = a.getEngine().first() + b.getEngine().first();
+        if(rad < Engine.MIN_THROAT_RADIUS)
+            engine.add(Engine.MIN_THROAT_RADIUS);
+        else if(rad > Engine.MAX_THROAT_RADIUS)
+            engine.add(Engine.MAX_THROAT_RADIUS);
+        else
+            engine.add(rad);
+
+        int length = a.getEngine().last() + b.getEngine().last();
+        if(length < Engine.minimumLength(engine.first()))
+            engine.add(Engine.minimumLength(engine.first()));
+        else if(length > Engine.maximumLength(engine.first()))
+            engine.add(Engine.maximumLength(engine.first()));
+        else
+            engine.add(length);
 
         //=== Fuel
-        // get a legal fuel type
-        int f = (a.getFuel().first() + b.getFuel().first()) % Fuel.fuels.entries();
-        // add a new fuel/ox ratio
-        int ratio = a.getFuel().last() + b.getFuel().last();
-        // check if result works, if not use end values
-        int bound = Fuel.fuels.get(f).fuelOxRatioValidity(ratio / 1000.0);
-        switch (bound){
-            case -1: ratio = (int)(Fuel.fuels.get(f).minimumFuelOxRatio() * 1000); break;
-            case 1: ratio = (int)(Fuel.fuels.get(f).maximumFuelOxRatio() * 1000); break;
-        }
+        int fuel = Math.abs(a.getFuel().first() + b.getFuel().first()) % Fuel.fuels.entries();
+        chrom.setFuel(new Tuple<Integer>(Fuel.fuels.keys().get(fuel)));
 
-        Tuple<Integer> fuel = new Tuple<>();
-        fuel.add(f);
-        fuel.add(ratio);
+        //=== Mass Distributions
+        Tuple<Integer> mass = new Tuple<>();
+        int dis = a.getMassDistribution().first() + b.getMassDistribution().first();
+        if(dis > 1000)
+            mass.add(1000); // 100% inert
+        else
+            mass.add(dis);
 
-        //=== Mass Distribution
+        // fuel distro
+        mass.add(1000 - mass.first());
+        chrom.setMassDistribution(mass);
 
-        int inert = a.getMassDistribution().first() + a.getMassDistribution().last();
-        int fuelD = b.getMassDistribution().first() + b.getMassDistribution().last();
-
-        float scale = 1;
-        // proportion cant exceed 1 (1000)
-        if(inert + fuelD > 1000)
-            scale = 1000f / (inert + fuelD);
-
-        Tuple<Integer> massDist = new Tuple<>();
-        massDist.add((int)(inert * scale));
-        massDist.add((int)(fuelD * scale));
-
-        //=== Material
-        int m = (a.getMaterial().first() + b.getMaterial().first()) % Material.materials.entries();
-
-        Tuple<Integer> material = new Tuple<>(m);
-
-
-        return new Chromosome(fuselage, engine, fuel, massDist, material);
+        return chrom;
 
     } // tadd
-*/
+
 } // DifferentialEvolution

@@ -22,9 +22,9 @@ public class Altitude extends Fitness {
         // TODO: 07-Apr-16 Find a more elegant solution
 
         Altitude a = (Altitude) another;
-        if(altitude > a.getAltitude())
+        if(altitude < a.getAltitude())
             return 1;
-        else if(a.getAltitude() > altitude)
+        else if(a.getAltitude() < altitude)
             return -1;
 
         return 0;

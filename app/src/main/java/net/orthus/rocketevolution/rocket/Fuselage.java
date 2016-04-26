@@ -32,10 +32,15 @@ import java.util.List;
 public class Fuselage extends Graphic {
 
     //=== CONSTANTS
+    // proportion of Rocket volume dedicated to support systems
+    public static final double MIN_INERT_PROPORTION = 0.1; //TODO check
+    public static final double MAX_INERT_PROPORTION = 0.4; //TODO check if this is realistic
 
     //TODO units?
-    public static final int MAX_FUSELAGE_VECTOR_LENGTH = 300;
-    private static final int MAX_NUMBER_OF_FUSELAGE_VECTORS = 20;
+    public static final int MAX_FUSELAGE_VECTOR_LENGTH = 300,
+                            MIN_FUSELAGE_VECTOR_LENGTH = 5;
+    public static final int MAX_NUMBER_OF_FUSELAGE_VECTORS = 50,
+                            MIN_NUMBER_OF_FUSELAGE_VECTORS = 5;
 
     // average density of all support systems
     private final float densitySupport = 2650f; //TODO set a fixed density for support systems/materials
@@ -69,7 +74,6 @@ public class Fuselage extends Graphic {
     private Chromosome chromosome;
     private Path path;
 
-    public String type = "";
     //=== CONSTRUCTORS
 
     public Fuselage(Chromosome chromosome){
@@ -99,10 +103,8 @@ public class Fuselage extends Graphic {
             vectorList.add( new Vector( magnitudes.get(i), up + (spoke * i) ) );
 
         // get coefficient with this half flipped so mostly working with positive values
-        Aerodynamics a = new Aerodynamics(
-                       new VectorGroup(vectorList).negateX().getVectorList());
-        dragCoefficient = a.dragCoefficient();
-        type = a.type;
+        dragCoefficient = new Aerodynamics(
+                new VectorGroup(vectorList).negateX().getVectorList()).dragCoefficient();
         //dragCoefficient = new Aerodynamics(
          //       new VectorGroup(vectorList).negateX().getVectorList()).dragCoefficient();
 
@@ -525,6 +527,18 @@ public class Fuselage extends Graphic {
     }
 
     //===== STATIC METHODS
+    public static Tuple<Integer> randomizeMassDistributions(){
+
+
+        double inert = Utility.rand(MIN_INERT_PROPORTION, MAX_INERT_PROPORTION);
+        double fuel = Utility.rand(0, 1 - inert);
+
+        Tuple<Integer> result = new Tuple<>();
+        result.add((int)(inert * 1000));
+        result.add((int)(fuel * 1000));
+
+        return result;
+    }
 
     /**
      * Creates a list of allowable vector magnitudes for later Fuselage generation.
@@ -537,7 +551,7 @@ public class Fuselage extends Graphic {
 
         // number of vectors to randomize
         // minimum of 3 to avoid 2D/1D designs
-        int num = Utility.rand(3, MAX_NUMBER_OF_FUSELAGE_VECTORS);
+        int num = Utility.rand(MIN_NUMBER_OF_FUSELAGE_VECTORS, MAX_NUMBER_OF_FUSELAGE_VECTORS);
 
         // randomize and add them to the list
         for(int i=0; i < num; i++)

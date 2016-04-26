@@ -13,6 +13,6 @@ import java.util.UUID;
 public interface Genetic {
 
     //ArrayList<Tuple<Integer>> Population = changeme; //Pass our chromobuddies through this guy
-    public Hash<UUID, Rocket> evolve();
+    Hash<UUID, Rocket> evolve();
 
 }

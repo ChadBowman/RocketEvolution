@@ -46,7 +46,7 @@ public class Utility<O> {
         nums.add(upperBound);
 
         // if bounds are not set correctly, flip them
-        nums = (nums.first() > nums.last())? nums.swap() : nums;
+        nums = (nums.first() > nums.last())? nums.flip() : nums;
 
         lowerBound = nums.first();
         upperBound = nums.last();
@@ -66,7 +66,7 @@ public class Utility<O> {
         nums.add(upperBound);
 
         // if bounds are not set correctly, flip them
-        nums = (nums.first() > nums.last())? nums.swap() : nums;
+        nums = (nums.first() > nums.last())? nums.flip() : nums;
 
         lowerBound = nums.getList().get(0);
         upperBound = nums.getList().get(1);
@@ -84,7 +84,7 @@ public class Utility<O> {
         nums.add(upperBound);
 
         // if bounds are not set correctly, flip them
-        nums = (nums.first() > nums.last())? nums.swap() : nums;
+        nums = (nums.first() > nums.last())? nums.flip() : nums;
 
         lowerBound = nums.getList().get(0);
         upperBound = nums.getList().get(1);
