@@ -9,10 +9,19 @@ import net.orthus.rocketevolution.rocket.Rocket;
 import net.orthus.rocketevolution.utility.*;
 import net.orthus.rocketevolution.fuels.Fuel;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.UUID;
+
 /**
  * Created by Chad on 2/7/2016.
  */
-public class Chromosome {
+public class Chromosome implements Serializable {
 
     //===== INSTANCE VARIABLES
 
@@ -140,5 +149,44 @@ public class Chromosome {
     public void setMaterial(Tuple<Integer> x){ material = x; }
     public void setColor(Tuple<Integer> x){ color = x;}
     public void setNumVectors(int x){ numVectors = x; }
+
+    //===== INTERFACE
+
+    public boolean write(File directory, UUID id){
+
+        File file = new File(directory, id.toString() + ".roc");
+
+        try{
+            FileOutputStream fos = new FileOutputStream(file);
+            ObjectOutputStream out = new ObjectOutputStream(fos);
+            out.writeObject(this);
+            out.close();
+            fos.close();
+            return true;
+
+        }catch(IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+    }
+
+    public static Chromosome load(File file){
+
+        Chromosome r = null;
+
+        try{
+            FileInputStream fis = new FileInputStream(file);
+            ObjectInputStream in = new ObjectInputStream(fis);
+            r = (Chromosome) in.readObject();
+            in.close();
+            fis.close();
+
+        }catch(IOException | ClassNotFoundException e){
+            e.printStackTrace();
+        }
+
+        return r;
+    }
 
 } // Chromosome

@@ -1,17 +1,16 @@
-package net.orthus.rocketevolution.Game;
+package net.orthus.rocketevolution.engine;
 
 import android.graphics.Canvas;
 import android.view.SurfaceHolder;
 
 import net.orthus.rocketevolution.ui.Launchpad;
-import net.orthus.rocketevolution.utility.Utility;
 
 /**
  * Created by Chad on 7/23/2015.
  */
 public class GameThread extends Thread {
 
-    private int FPS = 20;
+    private int FPS = 30;
     private float averageFPS;
     private SurfaceHolder surfaceHolder;
     private Launchpad launchpad;
@@ -35,7 +34,7 @@ public class GameThread extends Thread {
         long waitTime;
         long totalTime = 0;
         long frameCount = 0;
-        long targetTime = 1000/FPS;
+        long targetTime = 1000 / FPS;
         long elapsed;
 
         while(running){
@@ -48,9 +47,10 @@ public class GameThread extends Thread {
                 synchronized (surfaceHolder){
                     this.launchpad.update();
                     this.launchpad.draw(canvas);
-                    //Utility.p("FPS: %f", averageFPS);
                 }
-            }catch(Exception e){}
+            }catch(Exception e){
+                e.printStackTrace();
+            }
 
             finally {
                 if(canvas != null){
@@ -63,18 +63,18 @@ public class GameThread extends Thread {
                 }
             }
 
-            elapsed = (System.nanoTime() - startTime) / 1000000;
+            elapsed = (System.nanoTime() - startTime) / Launchpad.MILLION;
             waitTime = targetTime - elapsed;
 
             try{
-                this.sleep(waitTime);
-            }catch(Exception e){}
+                Thread.sleep(waitTime);
+            }catch(Exception ignored){}
 
             totalTime += System.nanoTime() - startTime;
             frameCount++;
 
             if(frameCount == FPS){
-                averageFPS = 1000 / ((totalTime / frameCount) / 1000000);
+                averageFPS = 1000 / ((totalTime / frameCount) / Launchpad.MILLION);
                 frameCount = 0;
                 totalTime = 0;
             }

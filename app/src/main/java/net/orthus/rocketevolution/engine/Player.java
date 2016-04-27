@@ -1,4 +1,6 @@
-package net.orthus.rocketevolution.Game;
+package net.orthus.rocketevolution.engine;
+
+import net.orthus.rocketevolution.simulation.Fitness;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -8,7 +10,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -16,16 +17,26 @@ import java.util.UUID;
  */
 public class Player implements Serializable {
 
+    //===== STATIC VARIABLES
+    public static int selectedFitness;
+
     //===== INSTANCE VARIABLES
-    private int selectedFitness;
     private ArrayList<UUID> generation;
+    private int workingIndex, rocNum, genNum, fitness;
 
     public Player(){
         generation = new ArrayList<>();
+        workingIndex = 0;
+        fitness = Fitness.DRAG_CO;
+        selectedFitness = Fitness.DRAG_CO; // default fitness
+        rocNum = 0;
+        genNum = 1;
     }
 
 
-    public boolean write(File file){
+    public boolean save(File directory){
+
+        File file = new File(directory, "player.ply");
 
         try{
             FileOutputStream fos = new FileOutputStream(file);
@@ -60,11 +71,19 @@ public class Player implements Serializable {
     }
 
     //===== ACCESSORS
-    public int getSelectedFitness(){ return selectedFitness; }
+    public int getSelectedFitness(){ return fitness; }
     public ArrayList<UUID> getGeneration(){ return generation; }
+    public int getWorkingIndex(){ return workingIndex; }
+    public int getRocNum(){ return rocNum; }
+    public int getGenNum(){ return genNum; }
 
-    public void setSelectedFitness(int x){ selectedFitness = x; }
+    public void setSelectedFitness(int x){
+        fitness = x;
+        selectedFitness = x;
+    }
     public void setGeneration(ArrayList<UUID> x){ generation = x; }
-
+    public void setWorkingIndex(int x){ workingIndex = x; }
+    public void setRocNum(int x){ rocNum = x; }
+    public void setGenNum(int x){ genNum = x; }
 
 } // Player

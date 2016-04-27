@@ -9,23 +9,21 @@
         android:hardwareAccelerated="true"
         android:theme="@style/AppTheme" >
         <activity
-            android:name=".Game.Game"
+            android:name=".Game"
             android:label="@string/app_name"
-            android:hardwareAccelerated="true"
             android:screenOrientation="portrait" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
             android:name=".ui.PopulationActivity"
             android:label="@string/title_activity_population"
-            android:parentActivityName=".Game.Game" >
+            android:parentActivityName=".Game" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".Game.Game" />
+                android:value=".Game" />
         </activity>
     </application>
 

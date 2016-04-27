@@ -2,26 +2,32 @@ package net.orthus.rocketevolution.rocket;
 
 import net.orthus.rocketevolution.math.VarSum;
 import net.orthus.rocketevolution.math.Variable;
+import net.orthus.rocketevolution.utility.Utility;
+
+import java.util.Random;
 
 /**
  * Created by Chad on 15-Mar-16.
  */
 public class Guidance {
 
-    private Rocket rocket;
     private int engineCount;
 
     public Guidance(Rocket rocket){
-        this.rocket = rocket;
         engineCount = rocket.getFuselage().engineCount();
     }
 
     public VarSum[] testThrottle(){
 
         VarSum[] t = noThrottle();
+        int i = (t.length / 2) - 1;
 
-        if(t.length > 2)
-            t[0] = new VarSum(new Variable(-1/500f, 'x'), new Variable(1));
+        if(new Random().nextFloat() < 0.3)
+            i += 2;
+
+        if(new Random().nextFloat() < 0.6)
+            t[i] = new VarSum(new Variable(0.9));
+
 
         return t;
     }

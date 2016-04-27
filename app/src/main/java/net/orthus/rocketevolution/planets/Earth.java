@@ -110,7 +110,7 @@ public class Earth implements Kinetic {
     }
 
     public static Vector gravitationalAcceleration(Vector position){
-        return Physics.gravitationalAcceleration(MASS, position).negate();
+        return new Vector(0, -Physics.gravitationalAcceleration(MASS, position).getMagnitude());
     }
 
     public static double acceleration(double r){

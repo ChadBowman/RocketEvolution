@@ -97,7 +97,7 @@ public class VectorGroup {
     }
 
     public VectorGroup rotate(float theta){
-        ArrayList<Vector> rotated = new ArrayList<Vector>();
+        ArrayList<Vector> rotated = new ArrayList<>();
 
         // for each vector v, rotate and add to a new list
         for(Vector v : vectors)
@@ -107,7 +107,7 @@ public class VectorGroup {
     }
 
     public VectorGroup reCenter(Vector center){
-        ArrayList<Vector> list = new ArrayList<Vector>();
+        ArrayList<Vector> list = new ArrayList<>();
 
         for(Vector v : vectors)
             list.add(v.subtract(center));

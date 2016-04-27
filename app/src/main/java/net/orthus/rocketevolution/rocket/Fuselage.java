@@ -143,10 +143,6 @@ public class Fuselage extends Graphic {
         initialFuelMass = calculateInitialFuelMass(fuel);
         currentFuelMass = initialFuelMass;
 
-        // initial rotation is "up":
-        setRotation((float) Math.PI / 2f);
-
-
     } // end Fuselage()
 
     //=== PRIVATE METHODS
@@ -377,13 +373,17 @@ public class Fuselage extends Graphic {
      * @return Vector: net acceleration on system, Double: net torque on system, Double: Fuel proportion.
      */
     public Triple<Vector, Double, Double>
-        step(double pa, double dt, double[] throttle, float[] gimbal){
+        step(double pa, double dt, double[] throttle, float[] gimbal, float rotation){
 
         Vector acc;     // instantaneous acceleration on rocket due to thrust
         double angAcc;  // instantaneous angular acceleration
 
         if(currentFuelMass > 0) {
-            acc = netThrust(pa, throttle, gimbal).multiply(1.0 / currentMass());
+            acc = netThrust(pa, throttle, gimbal).multiply(1.0 / currentMass())
+                    .newAngle(rotation + (float)(Math.PI / 2f));
+
+            //Utility.p("A: %f", acc.getAngle());
+
             angAcc = netTorque(pa, throttle, gimbal) / currentInertia();
 
             // burn fuel at current rate
@@ -437,7 +437,6 @@ public class Fuselage extends Graphic {
 
     public Path path(float theta){
 
-        float scale = getScale();
         // rotate the negation of the center vector
         Vector center = new Vector(0, -centroid);
         // rotate about center of mass, then return to original center for shape
@@ -454,32 +453,32 @@ public class Fuselage extends Graphic {
             smallestY = (vectors.get(i).getY() < smallestY.getY()) ? vectors.get(i) : smallestY;
 
         // place smallestY vector on bottom of boundary and follow up to reveal new X axis
-        int xAxis = (int) (getBounds().getBottom() - (scale * -smallestY.getY()));
+        int xAxis = (int) (getBounds().getBottom() - (getScale() * -smallestY.getY()));
 
         //TODO temp variables for testing
-        relativeCenter = (int) (xAxis - (scale * centroid));
+        relativeCenter = (int) (xAxis - (getScale() * centroid));
         trueCenter = xAxis;
 
         // reset path
         path.reset();
 
         // start at top
-        float x = (float)(yAxis + (vectors.get(0).getX() * scale));
-        float y = (float) (xAxis - (vectors.get(0).getY() * scale));
+        float x = (float)(yAxis + (vectors.get(0).getX() * getScale()));
+        float y = (float) (xAxis - (vectors.get(0).getY() * getScale()));
         path.moveTo(x, y);
         rotatedLocations[0].set(x, y);
 
         // move through list
         for(int i=1; i< vectors.size(); i++){
-            x = (float) (yAxis + (vectors.get(i).getX() * scale));
-            y = (float) (xAxis - (vectors.get(i).getY() * scale));
+            x = (float) (yAxis + (vectors.get(i).getX() * getScale()));
+            y = (float) (xAxis - (vectors.get(i).getY() * getScale()));
             path.lineTo(x, y);
             rotatedLocations[i].set(x, y);
         }
 
         // close path and return
-        path.lineTo(yAxis + ((float) vectors.get(0).getX() * scale),
-                xAxis - ((float) vectors.get(0).getY() * scale));
+        path.lineTo(yAxis + ((float) vectors.get(0).getX() * getScale()),
+                xAxis - ((float) vectors.get(0).getY() * getScale()));
 
         return path;
 

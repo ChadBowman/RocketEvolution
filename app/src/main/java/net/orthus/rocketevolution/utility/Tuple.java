@@ -2,6 +2,7 @@ package net.orthus.rocketevolution.utility;
 
 import android.support.annotation.NonNull;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -10,7 +11,7 @@ import java.util.Iterator;
 /**
  * Created by Chad on 2/11/2016.
  */
-public class Tuple<O> implements Collection<O>{
+public class Tuple<O> implements Collection<O>, Serializable{
 
     //==== INSTANCE VARIABLES
 

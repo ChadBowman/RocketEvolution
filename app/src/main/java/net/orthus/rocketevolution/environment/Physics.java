@@ -33,10 +33,9 @@ public class Physics {
         return distance.newMagnitude(G * mass / Math.pow(distance.getMagnitude(), 2));
     }
 
-    public static Vector drag(Vector objectVelocity, double density, double area, double coefficient){
-        return objectVelocity.newMagnitude(
-                0.5 * density * Math.pow(objectVelocity.getMagnitude(), 2) * area * coefficient)
-                .negate(); // flip the force since it opposes the object
+    public static Vector drag(Vector velocity, double density, double area, double coefficient){
+        return velocity.newMagnitude(0.5 * density
+                * Math.pow(velocity.getMagnitude(), 2) * area * coefficient).negate();
     }
 
 

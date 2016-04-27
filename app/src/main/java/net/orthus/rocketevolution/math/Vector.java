@@ -2,16 +2,17 @@ package net.orthus.rocketevolution.math;
 
 import android.support.annotation.NonNull;
 
+
 /**
  * Created by Chad on 7/23/2015.
  *
  * Uses a pair of doubles as the components of a 2D vector.
  */
-public class Vector implements Comparable<Vector>{
+public class Vector implements Comparable<Vector> {
 
     //=== CONSTANTS
     // Tolerance for double comparison
-    private final double DELTA = 0.0000001;
+    private final double DELTA = 0.000001;
     public static final Vector ZERO = new Vector();
 
     //=== INSTANCE VARIABLES
@@ -129,7 +130,7 @@ public class Vector implements Comparable<Vector>{
     }
 
     public Vector newAngle(float theta){
-        return new Vector(getMagnitude(), theta);
+        return new Vector(getMagnitude(), normalizeAngle(theta));
     }
 
     public void newAngle_(float theta){

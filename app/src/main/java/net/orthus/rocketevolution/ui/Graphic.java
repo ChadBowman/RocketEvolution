@@ -33,7 +33,7 @@ public abstract class Graphic {
     public void setPaint(Paint paint) { this.paint = paint; }
     public void setScale(float scale){ this.scale = scale; }
     public void setRotation(float rotation){
-        this.rotation = rotation % (float)(Math.PI * 2);
+        this.rotation = rotation;
     }
 
 } // Graphic

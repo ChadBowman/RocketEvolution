@@ -119,4 +119,10 @@ public class Utility<O> {
         System.out.println(String.format("O& " + fmt, args));
     }
 
+    public static double map(double value, double fromRange, double toRange){
+
+        return (value / fromRange) * toRange;
+
+    }
+
 } // Utility

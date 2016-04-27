@@ -1,5 +1,8 @@
 package net.orthus.rocketevolution.rocket;
 
+import android.support.annotation.NonNull;
+
+import net.orthus.rocketevolution.engine.Player;
 import net.orthus.rocketevolution.evolution.Chromosome;
 import net.orthus.rocketevolution.math.Vector;
 import net.orthus.rocketevolution.planets.Earth;
@@ -22,16 +25,17 @@ import java.util.UUID;
 /**
  * Created by Chad on 7/23/2015.
  */
-public class Rocket implements Serializable, Kinetic, Comparable<Rocket>{
+public class Rocket implements Kinetic, Comparable<Rocket>{
 
+    //===== CONSTANTS
+    public static final int FALCON9R_MASS = 421300,      //kg
+                            FALCON9R_MASS_INERT = 25600; //kg
 
-    public static final int FALCON9R_MASS = 505846;
-
+    //===== INSTANCE VARIABLES
     private Chromosome chromosome;
     private Fuselage fuselage;
     private Kinematic kinematics;
     private Simulation simulation;
-    private Fitness fitness;
     private UUID id;
 
     //===== CONSTRUCTORS
@@ -44,9 +48,16 @@ public class Rocket implements Serializable, Kinetic, Comparable<Rocket>{
 
     public Rocket(){
         chromosome = new Chromosome().randomize();
-        this.fuselage = new Fuselage(chromosome); // base unit in CMs
+        this.fuselage = new Fuselage(chromosome);
         this.kinematics = new Kinematic();
         id = UUID.randomUUID();
+    }
+
+    public Rocket(Chromosome chromosome, UUID id){
+        this.chromosome = chromosome;
+        this.id = id;
+        kinematics = new Kinematic();
+        fuselage = new Fuselage(chromosome);
     }
 
     //===== PUBLIC METHODS
@@ -55,13 +66,12 @@ public class Rocket implements Serializable, Kinetic, Comparable<Rocket>{
         Vector a = fuselage.netThrust(Earth.atmosphericPressure(Earth.RADIUS), null, null)
                 .multiply(1 / fuselage.mass()).add(Earth.seaLevelAcc());
 
-        //Utility.p("Viable with " + a.toString());
         return a.getAngle() < Math.PI && a.getMagnitude() < 100;
 
     }
 
     public String toString(){
-        return String.format("ID:%s CH:%s", id.toString(), chromosome.toString());
+        return String.format("[%s] %s", id.toString(), chromosome.toString());
     }
 
     //===== STATIC METHODS
@@ -71,10 +81,8 @@ public class Rocket implements Serializable, Kinetic, Comparable<Rocket>{
     public Fuselage getFuselage(){ return fuselage; }
     public Chromosome getChromosome(){ return chromosome;}
     public Simulation getSimulation(){ return simulation; }
-    public Fitness getFitness(){ return fitness; }
     public UUID getId(){ return id; }
 
-    public void setFitness(Fitness fitness){ this.fitness = fitness; }
     public void setSimulation(Simulation sim){ simulation = sim; }
 
     //===== INTERFACES
@@ -82,44 +90,25 @@ public class Rocket implements Serializable, Kinetic, Comparable<Rocket>{
         return kinematics;
     }
 
-    public boolean write(File directory){
 
-        File file = new File(directory, id.toString() + ".roc");
-
-        try{
-            FileOutputStream fos = new FileOutputStream(file);
-            ObjectOutputStream out = new ObjectOutputStream(fos);
-            out.writeObject(this);
-            out.close();
-            fos.close();
-            return true;
-
-        }catch(IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-
-    }
-
-    public static Rocket load(File file){
-
-        Rocket r = null;
-
-        try{
-            FileInputStream fis = new FileInputStream(file);
-            ObjectInputStream in = new ObjectInputStream(fis);
-            r = (Rocket) in.readObject();
-            in.close();
-            fis.close();
-        }catch(IOException | ClassNotFoundException e){
-            e.printStackTrace();
-        }
-
-        return r;
-    }
+    //===== OVERRIDES
 
     @Override
-    public int compareTo(Rocket another) {
-        return simulation.fitness.compareTo(another.getSimulation().fitness);
+    public int compareTo(@NonNull Rocket another) {
+
+
+       switch (Player.selectedFitness){
+            case Fitness.ALTITUDE:
+                return simulation.getAltitude().compareTo(another.getSimulation().getAltitude());
+
+            case Fitness.DRAG_CO:
+                return simulation.getCoefficient().compareTo(another.getSimulation().getCoefficient());
+
+            case Fitness.DRAG:
+                return simulation.getDrag().compareTo(another.getSimulation().getDrag());
+        }
+
+        throw new RuntimeException("Invalid fitness selected!");
     }
-} // end Rocket
+
+} // Rocket

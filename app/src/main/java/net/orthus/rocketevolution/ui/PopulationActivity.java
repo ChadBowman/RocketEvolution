@@ -7,14 +7,10 @@ import android.view.MenuItem;
 import android.widget.ExpandableListView;
 
 import net.orthus.rocketevolution.R;
-import net.orthus.rocketevolution.population.Generation;
-import net.orthus.rocketevolution.rocket.Rocket;
 import net.orthus.rocketevolution.utility.Hash;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class PopulationActivity extends AppCompatActivity {
 

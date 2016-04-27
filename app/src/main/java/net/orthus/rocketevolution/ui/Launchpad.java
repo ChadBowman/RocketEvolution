@@ -1,7 +1,6 @@
 package net.orthus.rocketevolution.ui;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -12,12 +11,11 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 
-import net.orthus.rocketevolution.Game.GameThread;
-import net.orthus.rocketevolution.Game.Player;
+import net.orthus.rocketevolution.engine.GameThread;
+import net.orthus.rocketevolution.engine.Player;
 import net.orthus.rocketevolution.R;
 import net.orthus.rocketevolution.evolution.SimpleCrossover;
-import net.orthus.rocketevolution.math.Vector;
-import net.orthus.rocketevolution.population.Generation;
+import net.orthus.rocketevolution.evolution.Generation;
 import net.orthus.rocketevolution.rocket.Rocket;
 import net.orthus.rocketevolution.simulation.Fitness;
 import net.orthus.rocketevolution.simulation.Frame;
@@ -32,8 +30,6 @@ import java.util.Locale;
  */
 public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
 
-    //public static final int deviceWidth = 1440;
-    //public static final int deviceHeight = 2560;
     private static final Tuple<Integer> referenceDimensions = new Tuple<>(1440, 2560);
     public static final int MILLION = 1000000;
 
@@ -41,17 +37,17 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
 
     // Management elements
     private GameThread thread;
+    private Thread breedThread;
     private long currentTime, launchTime, rudTime;
 
     // Graphic elements
     private Background bg;
     private Animation explode; //, exhaust;
     private Bounds rocketBound, exploBound;
-    private Label popLabel, fitLabel, ticker, fuel, loc, speed, genL, acc;
+    private Label popButton, fitLabel, ticker, fuel, loc, speed, genL, fps, fit;
 
     // Player elements
     private Player player;
-    private int fitness;
     private int deviceWidth, deviceHeight;
 
     // Temp elements
@@ -59,12 +55,12 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
     private Generation currentGen, nextGen;
     private int workingIndex;
     private Frame currentFrame;
-    private boolean rud;
+    private boolean rud, good;
 
-    private int genSize = 19;
+    private int genSize = 9;
     private int genNum, rocNum;
 
-    public Launchpad(Context context, Player player){
+    public Launchpad(Context context){
         super(context);
         getHolder().addCallback(this);
         setFocusable(true);
@@ -77,11 +73,7 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
         deviceWidth = dis.widthPixels;
         deviceHeight = dis.heightPixels;
 
-        Utility.p("%d x %d", deviceWidth, deviceHeight);
-
-        this.player = player;
-        genNum = 1;
-        rocNum = 0;
+        //Utility.p("%d x %d", deviceWidth, deviceHeight);
 
         rocketBound = new Bounds(deviceWidth / 3, deviceWidth - (deviceWidth / 3),
                         deviceHeight / 4, deviceHeight - (deviceHeight / 4));
@@ -89,14 +81,18 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
         exploBound = new Bounds(deviceWidth / 3, 2/3f * deviceWidth,
                 deviceHeight / 2, 3/4f * deviceHeight);
 
+        nextGen = new Generation();
 
-        // player is a virgin, let's generate them some fresh rockets ;)
-        if(player.getGeneration().size() == 0) {
-            currentGen = new Generation(genSize);
-            currentGen.runSims();
-            player.setGeneration(currentGen.getGeneration().keys());
-        }
+        breedThread = new Thread(){
+            @Override
+            public void run() {
+                nextGen.setGeneration(new SimpleCrossover(currentGen.getGeneration()).evolve());
+                //currentGen.setGeneration(new DifferentialEvolution(currentGen.getGeneration()).evolve());
+                nextGen.runSims();
+            }
+        };
 
+        createUIObjects();
 
     } // Launchpad
 
@@ -105,14 +101,14 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
     private void createUIObjects(){
 
         float s = deviceWidth / 15f;
-        float w = (4 * deviceWidth / 7f) - s;
+        float w = (4 * deviceWidth / 5f) - s;
 
         // Population label
-        popLabel = new Label(
-                "Population", BitmapFactory.decodeResource(getResources(), R.drawable.button0));
-        popLabel.setBounds(new Bounds(s, s + w, deviceHeight / 20f, 2 * deviceHeight / 20f));
-        popLabel.setFont(Color.WHITE, 70, Typeface.DEFAULT);
-        popLabel.setTextLocation(90, 100);
+        popButton = new Label(
+                "Toggle Fitness", BitmapFactory.decodeResource(getResources(), R.drawable.button0));
+        popButton.setBounds(new Bounds(s, s + w, deviceHeight / 20f, 2 * deviceHeight / 20f));
+        popButton.setFont(Color.WHITE, 70, Typeface.DEFAULT);
+        popButton.setTextLocation(90, 100);
 
         // Optimization label
         fitLabel = new Label(
@@ -137,11 +133,11 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
         // Create background
         bg = new Background(BitmapFactory.decodeResource(getResources(), R.drawable.bgtest), deviceWidth, deviceHeight);
 
-        fuel = new Label("Fuel: 100%", null);
+        fuel = new Label();
         fuel.setBounds(new Bounds(deviceWidth / 10f, 0, deviceHeight / 5f, 0));
         fuel.setFont(Color.WHITE, 60, Typeface.DEFAULT);
 
-        speed = new Label("Speed: 0 m/s", null);
+        speed = new Label();
         speed.setBounds(new Bounds(deviceWidth / 10f, 0, (deviceHeight / 5f) + 60, 0));
         speed.setFont(Color.WHITE, 60, Typeface.DEFAULT);
 
@@ -149,46 +145,68 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
         loc.setBounds(new Bounds(deviceWidth / 10f, 0, (deviceHeight / 5f) + 120, 0));
         loc.setFont(Color.WHITE, 60, Typeface.DEFAULT);
 
+        fit = new Label();
+        fit.setBounds(new Bounds(deviceWidth / 10f, 0, (deviceHeight /5f) + 180, 0));
+        fit.setFont(Color.WHITE, 60, Typeface.DEFAULT);
+
         genL = new Label();
         genL.setBounds(new Bounds(deviceWidth / 10f, 0, (deviceHeight / 5f) - 60, 0));
         genL.setFont(Color.WHITE, 60, Typeface.DEFAULT);
 
-        acc = new Label();
-        acc.setBounds(new Bounds(deviceWidth / 10f, 0, (deviceHeight /5f) + 120, 0));
+        // Frames per second
+        fps = new Label();
+        fps.setBounds(new Bounds(deviceWidth / 12f, 0, 19/20f * deviceHeight, 0));
+        fps.setFont(Color.WHITE, 40, Typeface.DEFAULT);
     }
 
     private void nextRocket(){
-
-        //if(thread != null)
-            //Utility.p("Average FPS: %f", thread.getAverageFPS());
-
+        Utility.p("Next rocket called %d %d", workingIndex, nextGen.getGeneration().entries());
         if(workingIndex == currentGen.getGeneration().entries())
             breedNew();
 
+
         // get new rocket from generation
         currentRocket = currentGen.getGeneration().values().get(workingIndex);
-        //currentRocket.getSimulation().print(workingIndex);
-
         launchTime = System.nanoTime();
+
         // set up
         currentRocket.getFuselage().setBounds(rocketBound);
         currentRocket.getFuselage().setEngineBounds();
         //currentRocket.getFuselage().setEngineExhaust(exhaust);
         workingIndex++;
-
-        rud = false;
         rocNum++;
-        bg.update();
+        player.setWorkingIndex(workingIndex);
+        player.setRocNum(rocNum);
+        rud = false;
+        good = false;
+
     }
 
     private void breedNew(){
 
-        currentGen.setGeneration(new SimpleCrossover(currentGen.getGeneration()).evolve());
-        //currentGen.setGeneration(new DifferentialEvolution(currentGen.getGeneration()).evolve());
-        currentGen.runSims();
-        genNum++;
-        rocNum = 0;
-        workingIndex = 0;
+        try {
+            // make sure breeding is finished
+            breedThread.join();
+            // set a new generation
+            currentGen.setGeneration(nextGen.getGeneration());
+            Utility.p("Current Gen has %d ", currentGen.getGeneration().entries());
+            // set keys to reference later
+            player.setGeneration(currentGen.getGeneration().keys());
+
+            // reset values
+            rocNum = 0;
+            genNum++;
+            Utility.p("Gen num changed! to %d", genNum);
+            player.setGenNum(genNum);
+            workingIndex = 0;
+
+            // re-breed rockets for next time
+            breedThread.run();
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
     }
 
 
@@ -196,13 +214,12 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceCreated(SurfaceHolder holder){
 
-        createUIObjects();
+        workingIndex = player.getWorkingIndex();
+        rocNum = player.getRocNum();
+        genNum = player.getGenNum();
 
-        // Set default fitness selection
-        fitness = Fitness.ALTITUDE;
-
-        // Set initial conditions
-        workingIndex = 0;
+        if(nextGen.getGeneration().entries() == 0)
+            breedThread.run();
 
         // Grab first rocket
         nextRocket();
@@ -220,7 +237,6 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
         // Grab a new time
         currentTime = System.nanoTime();
 
-
         if(Utility.secondsElapsed(launchTime, currentTime) > 2 && currentFrame.getPosition().getY() < 0)
             rud = true;
 
@@ -233,13 +249,14 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
         // current rocket still going
         }else if(!rud){
 
-            //TEMP
-            //if(Utility.secondsElapsed(launchTime, currentTime) > 2)
-            //    rud = true;
+            // dont have rockets fly past their simulation
+            if(Utility.secondsElapsed(launchTime, currentTime) > 90) {
+                good = true;
+                rud = true;
+            }
 
             // check for RUD
             if(currentRocket.getSimulation().isRUD(Utility.secondsElapsed(launchTime, currentTime))){
-            //if(bg.atGround() && currentFrame.getVelocity().getY() < 0){
                 rud = true;
                 rudTime = System.nanoTime();
 
@@ -247,19 +264,22 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
                 // Update frames
                 currentFrame = currentRocket.getSimulation().position(Utility.secondsElapsed(launchTime, currentTime));
                 currentRocket.getFuselage().setRotation(currentFrame.getDirection());
+               // Utility.p("%s", currentFrame.toString());
 
-                ticker.setText(String.format(Locale.US, "T + %.0f", Utility.secondsElapsed(launchTime, currentTime)));
+                ticker.setText(String.format(Locale.US, "T + %.1f", Utility.secondsElapsed(launchTime, currentTime)));
                 speed.setText(String.format(Locale.US, "Speed: %.0f m/s", currentFrame.getVelocity().getMagnitude()));
                 fuel.setText(String.format(Locale.US, "Fuel: %.0f%%", currentFrame.getRemainingFuelProportion() * 100));
-                loc.setText(String.format(Locale.US, "Altitude: %.2f Km",
-                        currentFrame.getPosition().getY() / 1000f));
+                loc.setText(String.format(Locale.US, "Altitude: %.2f Km", currentFrame.getPosition().getY() / 1000f));
                 genL.setText(String.format(Locale.US, "Generation %d, Rocket %d", genNum, rocNum));
+                fps.setText(String.format(Locale.US, "%.0f FPS", thread.getAverageFPS()));
+                fit.setText(String.format(Locale.US, "Fitness: %s", Fitness.getFitness(Player.selectedFitness).name()));
 
                 //update background
-                //bg.setVelocity(currentFrame.getVelocity().multiply(0.1));
-                bg.set(currentFrame.getPosition());
-            }
-        }
+                bg.set(currentFrame.getPosition().multiply(10));
+
+            } // else
+
+        } // if not rud
 
     } // update()
 
@@ -270,21 +290,21 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
         // Draw background first
         bg.draw(canvas);
 
-        if(rud) {
-            //expload.setEnable(true);
+        if(rud && !good)
             explode.draw(canvas);
-        }else {
+        else
             currentRocket.getFuselage().draw(canvas);
-        }
 
         // Draw labels
-        popLabel.draw(canvas);
+        popButton.draw(canvas);
         //fitLabel.draw(canvas);
         ticker.draw(canvas);
         fuel.draw(canvas);
         loc.draw(canvas);
         speed.draw(canvas);
         genL.draw(canvas);
+        fps.draw(canvas);
+        fit.draw(canvas);
 
         canvas.restoreToCount(savedState);
 
@@ -295,18 +315,22 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
     public boolean onTouchEvent(MotionEvent event){
 
         rud = true;
-        rudTime = System.nanoTime();
 
         if(event.getAction() == MotionEvent.ACTION_DOWN){
 
-
-            if(popLabel.activate(event.getX(), event.getY())) {
-                Intent i = new Intent(getContext(), PopulationActivity.class);
-                i.putExtra("pop", player.getGeneration());
-                i.putExtra("test", "Rocket");
-                getContext().startActivity(i);
+            if(popButton.activate(event.getX(), event.getY())) {
+                //Intent i = new Intent(getContext(), PopulationActivity.class);
+                //i.putExtra("pop", player.getGeneration());
+                //i.putExtra("test", "Rocket");
+                //getContext().startActivity(i);
+                Player.selectedFitness = (Player.selectedFitness + 1) % 3;
+                breedThread.run();
+                rud = false;
             }
         }
+
+        if(rud)
+            rudTime = System.nanoTime();
 
         return super.onTouchEvent(event);
     }
@@ -316,7 +340,7 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
 
     }
 
-    private void kill(){
+    public void kill(){
         boolean retry = true;
         int counter = 0;
 
@@ -339,8 +363,19 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceDestroyed(SurfaceHolder holder){
 
-        kill();
+        if(thread != null)
+            kill();
 
     } // end surfaceDestroyed
+
+    public Generation getCurrentGen(){ return currentGen; }
+    public Player getPlayer(){ return player; }
+    public int getWorkingIndex(){ return workingIndex; }
+    public GameThread getThread(){ return thread; }
+
+    public void setCurrentGen(Generation g){ currentGen = g;}
+    public void setPlayer(Player p){ player = p; }
+    public void setRocNum(int x){ rocNum = x; }
+    public void setGenNum(int x){ genNum = x; }
 
 } // end Launchpad

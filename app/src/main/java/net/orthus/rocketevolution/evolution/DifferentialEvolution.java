@@ -1,22 +1,15 @@
 package net.orthus.rocketevolution.evolution;
 
-import android.util.Pair;
-
 import net.orthus.rocketevolution.fuels.Fuel;
-import net.orthus.rocketevolution.materials.Material;
-import net.orthus.rocketevolution.population.Generation;
 import net.orthus.rocketevolution.rocket.Engine;
 import net.orthus.rocketevolution.rocket.Fuselage;
 import net.orthus.rocketevolution.rocket.Rocket;
-import net.orthus.rocketevolution.simulation.Fitness;
 import net.orthus.rocketevolution.utility.Hash;
 import net.orthus.rocketevolution.utility.Tuple;
 import net.orthus.rocketevolution.utility.Utility;
 
-import java.text.ChoiceFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Random;
 import java.util.UUID;
 
 /**

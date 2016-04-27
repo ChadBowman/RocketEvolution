@@ -1,4 +1,4 @@
-package net.orthus.rocketevolution.population;
+package net.orthus.rocketevolution.evolution;
 
 import net.orthus.rocketevolution.evolution.Chromosome;
 import net.orthus.rocketevolution.evolution.SimpleCrossover;
@@ -19,46 +19,38 @@ import java.util.UUID;
  */
 public class Generation {
 
+    public static final int GENERATION_SIZE = 13;
+
     private Hash<UUID, Rocket> generation;
+
+    public Generation(){
+        generation = new Hash<>();
+    }
 
     public Generation(int number){
         generation = generate(number);
     }
 
-    public Generation(Hash<UUID, Rocket> previous){
-        // change this back the way it was
-    }
-
 
     //===== PUBLIC METHODS
-    public ArrayList<String> idList(){
-        ArrayList<String> list = new ArrayList<>();
-        for(UUID id : generation.keys())
-            list.add(id.toString());
 
-        return list;
-    }
-
+    // TODO: 26-Apr-16 thread the ops of this method
     public void runSims(){
 
         ArrayList<Rocket> r = generation.values();
-        for(int i=0; i < r.size(); i++){
-            //new Thread(){
-            //   public void run(){
-            r.get(i).setSimulation(new Simulator(r.get(i)).run(5, 120));
-            //   }
-            // }.start();
-        }
+
+        for(int i=0; i < r.size(); i++)
+            r.get(i).setSimulation(new Simulator(r.get(i)).run(60, 100));
 
     }
 
-    public boolean saveAll(File directory){
+    // TODO: 26-Apr-16 thread the ops of this method
+    public void saveAll(File directory){
 
-        for(Rocket rocket : generation.values())
-            if(!rocket.write(directory))
-                return false;
+        for(Rocket rocket : generation.values()) {
+            rocket.getChromosome().write(directory, rocket.getId());
+        }
 
-        return true;
     }
 
 
@@ -70,10 +62,9 @@ public class Generation {
         int i = 0;
         while(gen.entries() != number){
             Rocket r = new Rocket();
-            if(r.isViable()) {
+            if(r.isViable())
                 gen.add(r.getId(), r);
-                //Utility.p("Merlin %f", r.getFuselage().merlin1DRatio());
-            }
+
             i++;
         }
 
@@ -87,14 +78,5 @@ public class Generation {
 
     public void setGeneration(Hash<UUID, Rocket> x){ generation = x; }
 
-    //===== STATIC METHODS
-/*    public static Generation loadGeneration(ArrayList<String> ids, File dir){
-
-        Hash<UUID, Rocket> gen = new Hash<>();
-        for(String id : ids)
-            gen.add(UUID.fromString(id), Rocket.load(new File(dir, id + ".roc")));
-
-        return new Generation(gen);
-    }*/
 
 } // Generation

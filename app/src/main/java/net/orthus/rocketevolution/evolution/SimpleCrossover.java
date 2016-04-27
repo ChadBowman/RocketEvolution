@@ -37,8 +37,8 @@ public class SimpleCrossover implements Genetic{
     public SimpleCrossover(Hash<UUID, Rocket> generation) {
 
         this.generation = generation.values();
-        mutationRate = 0.05f;
-        crossoverRate = 0.3f;
+        mutationRate = 0.1f;
+        crossoverRate = 0.35f;
     }
 
 

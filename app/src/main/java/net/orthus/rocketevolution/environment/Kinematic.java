@@ -12,7 +12,7 @@ public class Kinematic {
                     velocity,
                     acceleration;
 
-    private float rotPos;
+    private float rotPos; // needs to be a float for Vector parameter
     private double rotVel, rotAcc;
 
     public Kinematic(){

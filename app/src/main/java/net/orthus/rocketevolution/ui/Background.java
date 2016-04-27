@@ -20,7 +20,6 @@ public class Background extends Graphic{
     //===== INSTANCE VARIABLES
     private Bitmap image;
     private float x, y;
-    private Vector velocity;
     private long previous;
     private int width, height;
 
@@ -38,28 +37,16 @@ public class Background extends Graphic{
 
         x = 0;
         y = -image.getHeight() + height;
-        velocity = new Vector();
         previous = System.nanoTime();
     }
 
     public void update(){
 
-        if(y < -image.getHeight() + height)
-            y = -image.getHeight() + height;
 
-        if(y > image.getHeight() * 1.2)
-            y = -image.getHeight();
-
-        float s = (float) Utility.secondsElapsed(previous, System.nanoTime());
-        add((float) velocity.getX() * s, (float) velocity.getY() * s);
-
-        previous = System.nanoTime();
     }
 
     public void draw(Canvas canvas){
-        update();
 
-        canvas.drawBitmap(image, x, y, null);
 
         // if part of the background is off the screen, loop it around
         if(x > 0)
@@ -67,17 +54,23 @@ public class Background extends Graphic{
         if(x < 0)
             canvas.drawBitmap(image, x + image.getWidth(), y, null);
 
-        if(x > canvas.getWidth() || x < -canvas.getWidth())
-            x = 0;
+        if(x > image.getWidth())
+            canvas.drawBitmap(image, x - image.getWidth() * 2, y, null);
+        if(x < -image.getWidth())
+            canvas.drawBitmap(image, x + image.getWidth() * 2, y, null);
+        else
+            canvas.drawBitmap(image, x, y, null);
+
     }
 
-    public void add(double x, double y){
+    public void add(float x, float y){
         this.x += x;
         this.y += y;
     }
 
     public void set(Vector v){
-        x = (float) -v.getX();
+
+        x = (float) -v.getX() * 50000;
         y = (float) v.getY() + height - image.getHeight();
     }
 
@@ -90,7 +83,6 @@ public class Background extends Graphic{
         return y <= height - image.getHeight();
     }
 
-    public void setVelocity(Vector v){ velocity = v; }
 
 
 } // Background

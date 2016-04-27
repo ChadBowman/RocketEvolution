@@ -3,6 +3,7 @@ package net.orthus.rocketevolution.simulation;
 import net.orthus.rocketevolution.math.Vector;
 import net.orthus.rocketevolution.utility.Utility;
 
+import java.io.Serializable;
 import java.util.Locale;
 
 /**
