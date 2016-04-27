@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import net.orthus.rocketevolution.simulation.Fitnesses.Altitude;
 import net.orthus.rocketevolution.simulation.Fitnesses.Drag;
 import net.orthus.rocketevolution.simulation.Fitnesses.DragCoefficient;
+import net.orthus.rocketevolution.simulation.Fitnesses.SpecificImpulse;
 
 import java.io.Serializable;
 
@@ -15,7 +16,10 @@ public abstract class Fitness implements Comparable<Fitness> {
 
     public static final int ALTITUDE = 0,
                             DRAG_CO = 1,
-                            DRAG = 2;
+                            DRAG = 2,
+                            ISP = 3;
+
+    public static final int NUMBER_OF_FITNESS = 4;
 
     public static Fitness getFitness(int id){
 
@@ -23,6 +27,7 @@ public abstract class Fitness implements Comparable<Fitness> {
             case ALTITUDE: return new Altitude(0);
             case DRAG_CO: return new DragCoefficient(0);
             case DRAG: return new Drag(0);
+            case ISP: return new SpecificImpulse(0);
         }
 
         return null;

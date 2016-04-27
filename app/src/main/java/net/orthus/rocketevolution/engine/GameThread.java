@@ -25,6 +25,7 @@ public class GameThread extends Thread {
     }
 
     public void setRunning(boolean b){ running = b; }
+    public boolean isRunning(){ return running; }
     public float getAverageFPS(){ return averageFPS; }
 
     @Override

@@ -10,6 +10,7 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import net.orthus.rocketevolution.engine.GameThread;
 import net.orthus.rocketevolution.engine.Player;
@@ -86,6 +87,7 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
         breedThread = new Thread(){
             @Override
             public void run() {
+                Utility.p("Breeding new generation...");
                 nextGen.setGeneration(new SimpleCrossover(currentGen.getGeneration()).evolve());
                 //currentGen.setGeneration(new DifferentialEvolution(currentGen.getGeneration()).evolve());
                 nextGen.runSims();
@@ -160,7 +162,7 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     private void nextRocket(){
-        Utility.p("Next rocket called %d %d", workingIndex, nextGen.getGeneration().entries());
+
         if(workingIndex == currentGen.getGeneration().entries())
             breedNew();
 
@@ -189,19 +191,17 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
             breedThread.join();
             // set a new generation
             currentGen.setGeneration(nextGen.getGeneration());
-            Utility.p("Current Gen has %d ", currentGen.getGeneration().entries());
             // set keys to reference later
             player.setGeneration(currentGen.getGeneration().keys());
 
             // reset values
             rocNum = 0;
             genNum++;
-            Utility.p("Gen num changed! to %d", genNum);
             player.setGenNum(genNum);
             workingIndex = 0;
 
             // re-breed rockets for next time
-            breedThread.run();
+            breedThread.start();
 
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -225,9 +225,7 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
         nextRocket();
 
         // Start the graphics thread
-        thread = new GameThread(getHolder(), this);
-        thread.setRunning(true);
-        thread.start();
+        start();
 
     } // surfaceCreate
 
@@ -323,8 +321,13 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
                 //i.putExtra("pop", player.getGeneration());
                 //i.putExtra("test", "Rocket");
                 //getContext().startActivity(i);
-                Player.selectedFitness = (Player.selectedFitness + 1) % 3;
-                breedThread.run();
+
+                Player.selectedFitness = (Player.selectedFitness + 1) % Fitness.NUMBER_OF_FITNESS;
+
+                Toast.makeText(getContext(), "Next Generation Will Be Bred For "
+                        + Fitness.getFitness(Player.selectedFitness).name(), Toast.LENGTH_SHORT).show();
+
+
                 rud = false;
             }
         }
@@ -338,6 +341,12 @@ public class Launchpad extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int deviceWidth, int deviceHeight){
 
+    }
+
+    public void start(){
+        thread = new GameThread(getHolder(), this);
+        thread.setRunning(true);
+        thread.start();
     }
 
     public void kill(){

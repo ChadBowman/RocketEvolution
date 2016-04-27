@@ -12,6 +12,7 @@ import net.orthus.rocketevolution.rocket.Rocket;
 import net.orthus.rocketevolution.simulation.Fitnesses.Altitude;
 import net.orthus.rocketevolution.simulation.Fitnesses.Drag;
 import net.orthus.rocketevolution.simulation.Fitnesses.DragCoefficient;
+import net.orthus.rocketevolution.simulation.Fitnesses.SpecificImpulse;
 import net.orthus.rocketevolution.utility.Triple;
 import net.orthus.rocketevolution.utility.Utility;
 
@@ -153,6 +154,7 @@ public class Simulator {
         sim.setCoefficient(new DragCoefficient(rocket.getFuselage().getDragCoefficient()));
         sim.setDrag(new Drag(rocket.getFuselage().getDragCoefficient()
                 + Utility.map(rocket.getFuselage().getWidth(), Fuselage.MAX_FUSELAGE_VECTOR_LENGTH * 2, 5)));
+        sim.setSpecificImpulse(new SpecificImpulse(rocket.getFuselage().specificImpulse()));
 
 
         return sim;

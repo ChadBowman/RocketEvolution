@@ -19,7 +19,7 @@ import java.util.UUID;
  */
 public class Generation {
 
-    public static final int GENERATION_SIZE = 13;
+    public static final int GENERATION_SIZE = 29;
 
     private Hash<UUID, Rocket> generation;
 

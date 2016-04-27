@@ -40,10 +40,7 @@ public class Background extends Graphic{
         previous = System.nanoTime();
     }
 
-    public void update(){
-
-
-    }
+    public void update(){ }
 
     public void draw(Canvas canvas){
 
@@ -70,7 +67,7 @@ public class Background extends Graphic{
 
     public void set(Vector v){
 
-        x = (float) -v.getX() * 50000;
+        x = (float) -v.getX() * 30000;
         y = (float) v.getY() + height - image.getHeight();
     }
 

@@ -26,6 +26,7 @@ import java.util.UUID;
 
 public class Game extends Activity {
 
+    public static final String PLAYER_FILE = "player.ply";
     private Launchpad launchpad;
 
     @Override
@@ -37,21 +38,18 @@ public class Game extends Activity {
 
         // Set to full screen
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         // Add fuels
         Fuel.fuels.add(Fuel.KEROSENE_PEROXIDE, new KerosenePeroxide("", 810, 8));
         // Add materials
         Material.materials.add(Material.TEST_MAT, new TestMaterial());
 
-
         launchpad = new Launchpad(this);
 
-        File[] fs = getFilesDir().listFiles();
-        for(File f : fs)
-           Utility.p("File: " + f.getName());
-
-        File playerFile = new File(getFilesDir(), "player.ply");
+        File playerFile = new File(getFilesDir(), PLAYER_FILE);
         Utility.p("Player file exists: %b", playerFile.exists());
+
         Player player;
         if(!playerFile.exists())
             player = new Player();
@@ -89,6 +87,11 @@ public class Game extends Activity {
         launchpad.setCurrentGen(currentGen);
 
         // Start launchpad up
+    }
+
+    @Override
+    public void onResume(){
+        super.onResume();
         setContentView(launchpad);
     }
 
@@ -96,8 +99,10 @@ public class Game extends Activity {
     @Override
     public void onPause(){
         super.onPause();
+        if(launchpad.getThread() != null)
+            launchpad.kill();
 
-        launchpad.kill();
+        cleanUp();
     }
 
     @Override
@@ -106,7 +111,6 @@ public class Game extends Activity {
 
         launchpad.getPlayer().save(getFilesDir());
         launchpad.getCurrentGen().saveAll(getFilesDir());
-        Utility.p("Things should have been written.");
     }
 
 
@@ -130,6 +134,40 @@ public class Game extends Activity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    //===== PRIVATE METHODS
+    private void cleanUp(){
+        // clean up unneeded files
+        File[] fs = getFilesDir().listFiles();
+        int i =0;
+        try {
+            for (File f : fs)
+                if (isSafeToDelete(f.getName()))
+                    if(!f.delete()) {
+                        throw new Exception(String.format("%s failed to delete!", f.getName()));
+                    }else
+                        i++;
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+        Utility.p("%d files deleted", i);
+    }
+
+    private boolean isSafeToDelete(String fileName){
+
+        ArrayList<UUID> ids = launchpad.getPlayer().getGeneration();
+
+        if(fileName.equals(PLAYER_FILE))
+            return false;
+
+        for(UUID id : ids)
+            if(fileName.equals(id.toString() + ".roc"))
+                return false;
+
+        return true;
     }
 
 } // Game

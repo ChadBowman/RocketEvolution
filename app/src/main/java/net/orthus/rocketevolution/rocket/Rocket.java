@@ -106,6 +106,9 @@ public class Rocket implements Kinetic, Comparable<Rocket>{
 
             case Fitness.DRAG:
                 return simulation.getDrag().compareTo(another.getSimulation().getDrag());
+
+            case Fitness.ISP:
+                return simulation.getSpecificImpulse().compareTo(another.getSimulation().getSpecificImpulse());
         }
 
         throw new RuntimeException("Invalid fitness selected!");

@@ -22,11 +22,14 @@ public class Guidance {
         VarSum[] t = noThrottle();
         int i = (t.length / 2) - 1;
 
-        if(new Random().nextFloat() < 0.3)
+        if(Utility.rand.nextFloat() < 0.3)
             i += 2;
 
-        if(new Random().nextFloat() < 0.6)
+        if(Utility.rand.nextFloat() < 0.6)
             t[i] = new VarSum(new Variable(0.9));
+
+        if(Utility.rand.nextFloat() < 0.1)
+            t[i] = new VarSum(new Variable(0.7));
 
 
         return t;

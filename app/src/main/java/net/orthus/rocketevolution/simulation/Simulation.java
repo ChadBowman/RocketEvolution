@@ -4,6 +4,7 @@ package net.orthus.rocketevolution.simulation;
 import net.orthus.rocketevolution.simulation.Fitnesses.Altitude;
 import net.orthus.rocketevolution.simulation.Fitnesses.Drag;
 import net.orthus.rocketevolution.simulation.Fitnesses.DragCoefficient;
+import net.orthus.rocketevolution.simulation.Fitnesses.SpecificImpulse;
 import net.orthus.rocketevolution.utility.Hash;
 import net.orthus.rocketevolution.utility.Utility;
 
@@ -30,6 +31,7 @@ public class Simulation {
     private Altitude altitude;
     private DragCoefficient coefficient;
     private Drag drag;
+    private SpecificImpulse isp;
 
     //===== CONSTRUCTOR
     public Simulation(ArrayList<Frame> history, int interval, boolean rud){
@@ -65,9 +67,11 @@ public class Simulation {
     public Altitude getAltitude(){ return altitude; }
     public DragCoefficient getCoefficient(){ return coefficient; }
     public Drag getDrag(){ return drag; }
+    public SpecificImpulse getSpecificImpulse(){ return isp; }
 
     public void setAltitude(Altitude x){ altitude = x; }
     public void setCoefficient(DragCoefficient x){ coefficient = x; }
     public void setDrag(Drag x){ drag = x; }
+    public void setSpecificImpulse(SpecificImpulse x){ isp = x; }
 
 } // end Simulation

@@ -256,7 +256,8 @@ public class Engine extends Graphic {
     }
 
     public double specificImpulse(){
-        return exitVelocity / Earth.acceleration(Earth.RADIUS);
+        return thrust(Earth.atmosphericPressure(0),1, 0).getMagnitude()
+                / (Earth.acceleration(Earth.RADIUS) * massFlowRate);
     }
 
     /**

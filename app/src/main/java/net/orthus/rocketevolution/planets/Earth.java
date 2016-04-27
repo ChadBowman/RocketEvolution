@@ -33,7 +33,7 @@ public class Earth implements Kinetic {
     public static double atmosphericPressure(double altitude){
 
         altitude = (altitude < 0)? 0 : altitude;
-        double p = 0;
+        double p;
 
         // upper stratosphere (highest)
         if(altitude > 25000){

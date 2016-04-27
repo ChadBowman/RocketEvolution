@@ -26,7 +26,7 @@ public class SimpleCrossover implements Genetic{
     private ArrayList<Rocket> generation;
     private float mutationRate,
             crossoverRate;
-    private Random r = new Random();
+    private Tuple<Integer> usedIs;         // already used indexes to prevent multiple breeds
 
     //===== Constructor
 
@@ -39,6 +39,7 @@ public class SimpleCrossover implements Genetic{
         this.generation = generation.values();
         mutationRate = 0.1f;
         crossoverRate = 0.35f;
+        usedIs = new Tuple<>();
     }
 
 
@@ -68,7 +69,7 @@ public class SimpleCrossover implements Genetic{
         Tuple<Integer> result = new Tuple<>(x);
 
         // inert mass
-        if(r.nextFloat() < mutationRate) {
+        if(Utility.rand.nextFloat() < mutationRate) {
             int inert = (int)(Utility.rand(Fuselage.MIN_INERT_PROPORTION, Fuselage.MAX_INERT_PROPORTION) * 1000);
             result.set(0, inert);
 
@@ -78,7 +79,7 @@ public class SimpleCrossover implements Genetic{
         }
 
         // fuel mass
-        if(r.nextFloat() < mutationRate)
+        if(Utility.rand.nextFloat() < mutationRate)
             result.set(1, Utility.rand(result.get(0), 1000));
 
         return result;
@@ -89,7 +90,7 @@ public class SimpleCrossover implements Genetic{
         Tuple<Integer> result = new Tuple<>();
 
         // if there's to be a new fuel, ratio must be changed as well
-        if(r.nextFloat() < mutationRate)
+        if(Utility.rand.nextFloat() < mutationRate)
             result =  Fuel.randomizeFuelParameters();
         else{
             result.add(x.first());
@@ -103,10 +104,10 @@ public class SimpleCrossover implements Genetic{
 
         Tuple<Integer> result = new Tuple<>(x);
 
-        if(r.nextFloat() < mutationRate)
+        if(Utility.rand.nextFloat() < mutationRate)
             result.set(0, (Utility.rand(Engine.MIN_THROAT_RADIUS, Engine.MAX_THROAT_RADIUS)));
 
-        if(r.nextFloat() < mutationRate)
+        if(Utility.rand.nextFloat() < mutationRate)
             x.set(1, Utility.rand(Engine.minimumLength(x.first()), Engine.maximumLength(x.first())));
 
         return result;
@@ -115,7 +116,7 @@ public class SimpleCrossover implements Genetic{
     private Tuple<Integer> mutateFuselage(Tuple<Integer> x){
 
         for(int i=0; i < x.size(); i++)
-            if(r.nextFloat() < mutationRate)
+            if(Utility.rand.nextFloat() < mutationRate)
                 x.set(i, Utility.rand(1, Fuselage.MAX_FUSELAGE_VECTOR_LENGTH));
 
         return x;
@@ -123,7 +124,7 @@ public class SimpleCrossover implements Genetic{
 
     private Tuple<Integer> mutateColor(Tuple<Integer> x){
 
-        if(r.nextFloat() < mutationRate)
+        if(Utility.rand.nextFloat() < mutationRate)
             return Fuselage.randomColor();
 
         return x;
@@ -137,7 +138,7 @@ public class SimpleCrossover implements Genetic{
         Tuple<Integer> childB;
 
         // determine if attributes should be crossed over
-        boolean cross = r.nextFloat() < crossoverRate;
+        boolean cross = Utility.rand.nextFloat() < crossoverRate;
 
 
         if(cross) {
@@ -175,7 +176,7 @@ public class SimpleCrossover implements Genetic{
             // if both parents have vector at this location
             if(i < a.size() && i < b.size()){
                 // crossover occasionally
-                if(r.nextFloat() < crossoverRate)
+                if(Utility.rand.nextFloat() < crossoverRate)
                     childA.add(b.get(i));
                 else
                     childA.add(a.get(i));
@@ -190,7 +191,7 @@ public class SimpleCrossover implements Genetic{
         // repeat the same process for the second child
         for(int i=0; i < size2; i++)
             if(i < a.size() && i < b.size()){
-                if(r.nextFloat() < crossoverRate)
+                if(Utility.rand.nextFloat() < crossoverRate)
                     childB.add(a.get(i));
                 else
                     childB.add(b.get(i));
@@ -205,20 +206,20 @@ public class SimpleCrossover implements Genetic{
 
     } // crossFuselage
 
-    private Tuple<Rocket> breed(int masterIndex, Tuple<Rocket> group){
+
+    private Tuple<Rocket> breed(int selected, ArrayList<Rocket> pop){
 
         //group.add(new Rocket());
 
         // resulting children
         Tuple<Rocket> children = new Tuple<>();
 
-        // pick an index for the mate
-        int idx = Utility.rand(0, group.size() - 1);
-        if(idx == masterIndex)
-            idx = (idx + 1) % group.size();
 
-        Chromosome a = group.get(masterIndex).getChromosome();
-        Chromosome b = group.get(idx).getChromosome();
+        // find selected rocket's new index
+        int mate = (selected + 1) % (pop.size() - 1);
+
+        Chromosome a = pop.get(selected).getChromosome();
+        Chromosome b = pop.get(mate).getChromosome();
 
         Chromosome child1 = new Chromosome();
         Chromosome child2 = new Chromosome();
@@ -271,8 +272,10 @@ public class SimpleCrossover implements Genetic{
     public Hash<UUID, Rocket> evolve(){
 
         Hash<UUID, Rocket> newGroup = new Hash<>();
-        Tuple<Rocket> breedingGroup = topHalfPerformers();
+        ArrayList<Rocket> breedingGroup = topHalfPerformers().getList();
 
+        // mix up breeding group so rockets only breed once
+        Collections.shuffle(breedingGroup);
 
         // TODO: 27-Mar-16 thread each breading cycle in loop
         Tuple<Rocket> g;
@@ -290,8 +293,8 @@ public class SimpleCrossover implements Genetic{
         // more variety and to keep the bred generation the same size
         if(generation.size() % 2 == 0) {
             breedingGroup.add(new Rocket());
-            g = breed(breedingGroup.size() - 1, breedingGroup);
-            newGroup.add(g.get(0).getId(), g.get(0));
+            g = breed(breedingGroup.size()-1, breedingGroup);
+            newGroup.add(g.first().getId(), g.first());
         }
 
         return newGroup;

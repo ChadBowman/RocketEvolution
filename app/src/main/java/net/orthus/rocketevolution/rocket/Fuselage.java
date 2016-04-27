@@ -414,6 +414,10 @@ public class Fuselage extends Graphic {
 
     //=== PUBLIC METHODS
 
+    public double specificImpulse(){
+        return engines.values().get(0).specificImpulse();
+    }
+
     public double merlin1DRatio(){
         double t = engines.values().get(0)
                 .thrust(Earth.atmosphericPressure(Earth.RADIUS), 1, 0).getMagnitude();

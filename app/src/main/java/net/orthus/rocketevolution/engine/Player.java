@@ -1,5 +1,6 @@
 package net.orthus.rocketevolution.engine;
 
+import net.orthus.rocketevolution.Game;
 import net.orthus.rocketevolution.simulation.Fitness;
 
 import java.io.File;
@@ -36,7 +37,7 @@ public class Player implements Serializable {
 
     public boolean save(File directory){
 
-        File file = new File(directory, "player.ply");
+        File file = new File(directory, Game.PLAYER_FILE);
 
         try{
             FileOutputStream fos = new FileOutputStream(file);
